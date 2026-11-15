@@ -1,1 +1,2930 @@
 
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>TitipBekal v3.0</title>
+
+<!-- Font & Tailwind -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500;700&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>tailwind.config = { darkMode: 'class' }</script>
+
+<!-- Auto-PWA (GET-only cache safe untuk POST Apps Script) -->
+<script>
+  (function initPWA() {
+    const iconSvg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><rect width="512" height="512" fill="#f59e0b" rx="100"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-size="300" font-family="sans-serif" fill="#fff" font-weight="bold">T</text></svg>';
+    const iconUrl = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(iconSvg);
+    const manifest = {
+      name: "TitipBekal v3.0", short_name: "TitipBekal", display: "standalone",
+      start_url: location.href.split('?')[0], background_color: "#ffffff", theme_color: "#f59e0b",
+      icons: [{ src: iconUrl, sizes: "512x512", type: "image/svg+xml" }]
+    };
+    const manifestUrl = URL.createObjectURL(new Blob([JSON.stringify(manifest)], { type: 'application/json' }));
+    const link = document.createElement('link'); link.rel = 'manifest'; link.href = manifestUrl;
+    document.head.appendChild(link);
+
+    const swCode = "self.addEventListener('install', e => self.skipWaiting()); self.addEventListener('activate', e => e.waitUntil(clients.claim())); self.addEventListener('fetch', e => { if (e.request.method !== 'GET') return; e.respondWith(fetch(e.request).catch(() => new Response('Offline Mode'))); });";
+    const swUrl = URL.createObjectURL(new Blob([swCode], { type: 'application/javascript' }));
+    if ('serviceWorker' in navigator) navigator.serviceWorker.register(swUrl).catch(() => {});
+  })();
+</script>
+
+<!-- QR Code & Scanner Libraries -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js" type="text/javascript"></script>
+
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+  :root {
+    --ink: #111827; --paper: #f9fafb; --paper2: #f3f4f6;
+    --accent: #f59e0b; --accent-hover: #d97706;
+    --expense: #ef4444; --success: #10b981; --info: #3b82f6; --warn: #d97706;
+    --muted: #6b7280; --border: #e5e7eb; --card: #ffffff;
+    --shadow: 0 4px 6px -1px rgba(0,0,0,0.08), 0 2px 4px -1px rgba(0,0,0,0.04);
+    --radius: 12px;
+  }
+  .dark {
+    --ink: #f9fafb; --paper: #111827; --paper2: #1f2937;
+    --accent: #fbbf24; --accent-hover: #f59e0b;
+    --expense: #f87171; --success: #34d399; --info: #60a5fa; --warn: #fbbf24;
+    --muted: #9ca3af; --border: #374151; --card: #1f2937;
+    --shadow: 0 10px 15px -3px rgba(0,0,0,0.45);
+  }
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--paper);
+    color: var(--ink);
+    -webkit-font-smoothing: antialiased;
+    margin: 0;
+  }
+
+  .anim-up { animation: fadeUp 0.25s ease-out both; }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); }
+
+  .btn-primary {
+    background: var(--accent); color: #fff; border: 2px solid var(--accent);
+    border-radius: 8px; padding: 10px 14px; font-weight: 600; font-size: 13px;
+    cursor: pointer; transition: all 0.15s; display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  }
+  .btn-primary:hover:not(:disabled) { background: var(--accent-hover); border-color: var(--accent-hover); }
+  .btn-primary:disabled { opacity: 0.45; cursor: not-allowed; }
+
+  .btn-ghost {
+    background: transparent; color: var(--muted); border: 1px solid var(--border);
+    border-radius: 8px; padding: 8px 12px; font-weight: 500; font-size: 13px;
+    cursor: pointer; transition: all 0.15s; display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  }
+  .btn-ghost:hover:not(:disabled) { color: var(--ink); border-color: var(--ink); background: var(--paper2); }
+  .btn-ghost:disabled { opacity: 0.45; cursor: not-allowed; }
+
+  .input-field {
+    width: 100%; background: var(--paper2); border: 1px solid var(--border);
+    border-radius: 8px; padding: 9px 12px; font-size: 14px; color: var(--ink);
+    outline: none; transition: border-color 0.15s;
+  }
+  .input-field:focus { border-color: var(--accent); }
+  .input-field:disabled { opacity: 0.6; cursor: not-allowed; }
+  .input-field[type="file"] { padding: 6px; font-size: 12px; cursor: pointer; }
+  .input-field[type="color"] { cursor: pointer; }
+
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.55); backdrop-filter: blur(3px);
+    z-index: 100; display: flex; align-items: center; justify-content: center; padding: 12px;
+  }
+  .modal-box {
+    background: var(--card); border: 1px solid var(--border); border-radius: 16px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.25); width: 100%; max-width: 520px;
+    max-height: 92vh; overflow-y: auto;
+  }
+
+  .toast {
+    position: fixed; bottom: 20px; right: 20px; left: 20px; max-width: 420px; margin: 0 auto;
+    z-index: 250; background: var(--ink); color: var(--paper); padding: 12px 16px;
+    border-radius: 10px; font-size: 13px; font-weight: 600; display: flex; align-items: center;
+    gap: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); animation: fadeUp 0.25s both;
+  }
+
+  .tab-bar { display: flex; gap: 4px; background: var(--paper2); padding: 4px; border-radius: 10px; border: 1px solid var(--border); }
+  .tab-btn {
+    padding: 8px 8px; font-size: 13px; font-weight: 600; border-radius: 7px;
+    color: var(--muted); cursor: pointer; transition: all .15s; border: none;
+    background: transparent; display: inline-flex; align-items: center; justify-content: center; gap: 5px; flex: 1;
+  }
+  .tab-btn.active { background: var(--card); color: var(--ink); box-shadow: 0 1px 3px rgba(0,0,0,.1); }
+
+  .badge {
+    display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px;
+    border-radius: 6px; font-size: 11px; font-weight: 600; white-space: nowrap;
+  }
+
+  /* ========================================================================
+     ATURAN CETAK (THERMAL 57mm & REKAP A4 PDF)
+     ======================================================================== */
+  @media screen {
+    .print-only { display: none !important; }
+  }
+  @media print {
+    @page { margin: 0; }
+    body { background: white !important; margin: 0; padding: 0; color: #000 !important; }
+    .no-print { display: none !important; }
+    .print-only { display: block !important; width: 100%; }
+
+    .print-color-exact {
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
+
+    /* Struk Bluetooth Thermal 57mm (Tata letak 2 baris anti-terpotong) */
+    .print-struk {
+      width: 100%;
+      max-width: 57mm;
+      margin: 0;
+      padding: 3.5mm;
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      line-height: 1.35;
+      color: #000;
+      box-sizing: border-box;
+    }
+    .print-struk h3 { font-size: 15px; font-weight: 700; text-align: center; margin: 0 0 3px 0; color: #000; }
+    .print-struk .biz-info { text-align: center; font-size: 10px; margin-bottom: 6px; color: #000; word-break: break-word; }
+    .print-struk .dashed-line { border-top: 1px dashed #000; margin: 6px 0; }
+    .print-struk .item-block { border-bottom: 1px dashed #000; padding: 4px 0; }
+    .print-struk .item-name { font-weight: 700; word-break: break-word; overflow-wrap: anywhere; white-space: normal; }
+    .print-struk .item-meta { display: flex; justify-content: space-between; font-size: 10.5px; margin-top: 2px; }
+
+    /* Laporan Rekap A4 PDF */
+    .print-a4 {
+      width: 100%;
+      padding: 14mm;
+      font-family: system-ui, -apple-system, sans-serif;
+      color: #000;
+      box-sizing: border-box;
+    }
+    .print-a4 table { width: 100%; border-collapse: collapse; margin-top: 14px; font-size: 11px; }
+    .print-a4 th, .print-a4 td { border: 1px solid #222; padding: 6px 7px; text-align: left; color: #000; vertical-align: top; }
+    .print-a4 th { background: #f3f4f6 !important; font-weight: 700; }
+  }
+
+  #qr-reader { border: none !important; border-radius: 8px; overflow: hidden; }
+  #qr-reader button {
+    background: var(--accent); color: white; border: none; padding: 8px 14px;
+    border-radius: 6px; margin: 4px; cursor: pointer; font-family: 'DM Sans', sans-serif; font-weight: 600;
+  }
+</style>
+</head>
+<body>
+<div id="app-root"></div>
+
+<script type="module">
+import { h, render } from 'https://esm.sh/preact@10.19.6';
+import { useState, useMemo, useEffect, useCallback, useRef } from 'https://esm.sh/preact@10.19.6/hooks';
+import htm from 'https://esm.sh/htm@3.1.1';
+
+const html = htm.bind(h);
+
+/* ============================================================================
+ * PENYIMPANAN LOKAL & HELPER DASAR
+ * ============================================================================ */
+const LS = {
+  get: (k, def) => {
+    try {
+      const v = localStorage.getItem(k);
+      return v !== null ? JSON.parse(v) : def;
+    } catch {
+      return def;
+    }
+  },
+  set: (k, v) => {
+    try { localStorage.setItem(k, JSON.stringify(v)); } catch {}
+  }
+};
+
+const KEYS = {
+  CACHE: 'tb_v3_cache',
+  OUTBOX: 'tb_v3_outbox',
+  HIST: 'tb_v3_hist',
+  LOGO: 'tb_v3_logo',
+  DEVICE: 'tb_v3_device_id',
+  SYNC_URL: 'tb_syncUrl',
+  KASIR: 'tb_penjualan_v3',
+  THEME: 'tb_theme'
+};
+
+const formatRp = (n) => new Intl.NumberFormat('id-ID').format(Math.round(Number(n) || 0));
+const localDate = (d = new Date()) => new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().split('T')[0];
+const addDaysStr = (dateStr, deltaDays) => {
+  const parts = String(dateStr || localDate()).split('-');
+  const dt = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]) + deltaDays);
+  return localDate(dt);
+};
+const dateID = (s, opt) => {
+  if (!s) return '-';
+  return new Date(s + 'T00:00:00').toLocaleDateString('id-ID', opt);
+};
+const pad3 = (n) => String(n).padStart(3, '0');
+const formatWA = (hp) => {
+  let n = String(hp || '').replace(/\D/g, '');
+  if (n.startsWith('0')) n = '62' + n.substring(1);
+  return n;
+};
+
+const getOrCreateDeviceId = () => {
+  let id = LS.get(KEYS.DEVICE, '');
+  if (!id) {
+    id = 'HP-' + Math.random().toString(36).substring(2, 6).toUpperCase();
+    LS.set(KEYS.DEVICE, id);
+  }
+  return id;
+};
+
+const copyToClipboard = async (text) => {
+  try {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      await navigator.clipboard.writeText(text);
+      return true;
+    }
+  } catch {}
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.position = 'fixed';
+  ta.style.opacity = '0';
+  document.body.appendChild(ta);
+  ta.select();
+  const ok = document.execCommand('copy');
+  document.body.removeChild(ta);
+  return ok;
+};
+
+const DEFAULT_CACHE = () => {
+  const sd = localDate();
+  return {
+    v: 0,
+    sd,
+    md: addDaysStr(sd, -3),
+    set: {
+      hargaJual: 2000,
+      komisi: 200,
+      bizInfo: { nama: 'TitipBekal', alamat: '', telp: '', sosmed: '' },
+      harianBgColor: '#fef3c7',
+      harianTextColor: '#b45309',
+      kategoriList: ['Makanan', 'Minuman', 'Kue basah', 'Snack']
+    },
+    sup: [], // [id, nama, hp, bank, rekening, alamat, totalMenu]
+    mnu: [], // [id, supplierId, nama, kategori]
+    trx: []  // [idTrx, tanggal, supplierId, statusAmbil(0/1), statusBayar(0/1/2), items[[menuId,titip,sisa]], hargaJual, komisi]
+  };
+};
+
+/* ============================================================================
+ * DETEKSI KEMIRIPAN MENU (LEVENSHTEIN)
+ * ============================================================================ */
+const normalizeMenuName = (str) =>
+  String(str || '').toLowerCase().replace(/[^a-z0-9\s]/g, ' ').replace(/\s+/g, ' ').trim();
+
+const levenshtein = (a, b) => {
+  if (a === b) return 0;
+  if (!a.length) return b.length;
+  if (!b.length) return a.length;
+  const matrix = Array.from({ length: b.length + 1 }, (_, i) => [i]);
+  for (let j = 0; j <= a.length; j++) matrix[0][j] = j;
+  for (let i = 1; i <= b.length; i++) {
+    for (let j = 1; j <= a.length; j++) {
+      matrix[i][j] = b[i - 1] === a[j - 1]
+        ? matrix[i - 1][j - 1]
+        : Math.min(matrix[i - 1][j - 1] + 1, matrix[i][j - 1] + 1, matrix[i - 1][j] + 1);
+    }
+  }
+  return matrix[b.length][a.length];
+};
+
+const calcMenuSimilarity = (rawA, rawB) => {
+  const a = normalizeMenuName(rawA);
+  const b = normalizeMenuName(rawB);
+  if (!a || !b) return 0;
+  if (a === b) return 1;
+  const maxLen = Math.max(a.length, b.length);
+  let score = 1 - levenshtein(a, b) / maxLen;
+  if (a.length >= 5 && b.length >= 5 && (a.includes(b) || b.includes(a))) {
+    score = Math.max(score, 0.78);
+  }
+  return score;
+};
+
+/* ============================================================================
+ * OPTIMISTIC UI MERGE (CACHE SERVER + ANTREAN LOKAL)
+ * ============================================================================ */
+function computeEffectiveState(cache, outbox) {
+  const base = cache || DEFAULT_CACHE();
+  const state = {
+    v: base.v || 0,
+    sd: base.sd || localDate(),
+    md: base.md || addDaysStr(base.sd || localDate(), -3),
+    set: {
+      hargaJual: Number(base.set?.hargaJual ?? 2000),
+      komisi: Number(base.set?.komisi ?? 200),
+      bizInfo: {
+        nama: base.set?.bizInfo?.nama || 'TitipBekal',
+        alamat: base.set?.bizInfo?.alamat || '',
+        telp: base.set?.bizInfo?.telp || '',
+        sosmed: base.set?.bizInfo?.sosmed || ''
+      },
+      harianBgColor: base.set?.harianBgColor || '#fef3c7',
+      harianTextColor: base.set?.harianTextColor || '#b45309',
+      kategoriList: Array.isArray(base.set?.kategoriList)
+        ? [...base.set.kategoriList]
+        : ['Makanan', 'Minuman', 'Kue basah', 'Snack']
+    },
+    sup: (base.sup || []).map(r => [...r]),
+    mnu: (base.mnu || []).map(r => [...r]),
+    trx: (base.trx || []).map(r => [
+      r[0], r[1], r[2], Number(r[3]) || 0, Number(r[4]) || 0,
+      (r[5] || []).map(it => [...it]), Number(r[6]) || 0, Number(r[7]) || 0
+    ])
+  };
+
+  for (const cmd of (outbox || [])) {
+    if (!cmd || !cmd.op) continue;
+    const { op, p } = cmd;
+
+    if (op === 'SUP_SAVE') {
+      const [id, nama, hp, bank, rekening, alamat] = p;
+      const idx = state.sup.findIndex(x => x[0] === id);
+      const count = idx >= 0 ? (state.sup[idx][6] || 0) : 0;
+      const row = [id, nama, hp || '', bank || '', rekening || '', alamat || '', count];
+      if (idx >= 0) state.sup[idx] = row;
+      else state.sup.push(row);
+    } else if (op === 'SUP_DEL') {
+      state.sup = state.sup.filter(x => x[0] !== p);
+    } else if (op === 'MENU_SAVE') {
+      const [id, supplierId, nama, kategori] = p;
+      const idx = state.mnu.findIndex(x => x[0] === id);
+      const row = [id, supplierId, nama, kategori || 'Lainnya'];
+      if (idx >= 0) state.mnu[idx] = row;
+      else state.mnu.push(row);
+    } else if (op === 'MENU_DEL') {
+      state.mnu = state.mnu.filter(x => x[0] !== p);
+    } else if (op === 'TRX_TITIP') {
+      const [idTrx, tanggal, supplierId, rawItems] = p;
+      const idx = state.trx.findIndex(x => x[0] === idTrx);
+      let prevAmbil = 0, prevBayar = 0, hj = state.set.hargaJual, km = state.set.komisi;
+      const prevSisaMap = {};
+      if (idx >= 0) {
+        prevAmbil = state.trx[idx][3];
+        prevBayar = state.trx[idx][4];
+        hj = state.trx[idx][6] || hj;
+        km = state.trx[idx][7] || km;
+        (state.trx[idx][5] || []).forEach(it => { prevSisaMap[it[0]] = it[2]; });
+      }
+      const mergedItems = (rawItems || []).map(([mId, qty]) => [
+        mId, Number(qty) || 0, prevSisaMap.hasOwnProperty(mId) ? Math.min(Number(qty) || 0, prevSisaMap[mId]) : 0
+      ]);
+      const row = [idTrx, tanggal, supplierId, prevAmbil, prevBayar, mergedItems, hj, km];
+      if (idx >= 0) state.trx[idx] = row;
+      else state.trx.unshift(row);
+    } else if (op === 'TRX_AMBIL') {
+      const [idTrx, bayarCode, sisaPairs] = p;
+      const idx = state.trx.findIndex(x => x[0] === idTrx);
+      if (idx >= 0) {
+        const sisaMap = {};
+        (sisaPairs || []).forEach(([mId, s]) => { sisaMap[mId] = Number(s) || 0; });
+        state.trx[idx][3] = 1;
+        state.trx[idx][4] = Number(bayarCode) || 0;
+        state.trx[idx][5] = state.trx[idx][5].map(([mId, qty, oldSisa]) => [
+          mId, qty, sisaMap.hasOwnProperty(mId) ? Math.min(qty, Math.max(0, sisaMap[mId])) : oldSisa
+        ]);
+      }
+    } else if (op === 'TRX_BAYAR') {
+      const [idTrx, bayarCode] = p;
+      const idx = state.trx.findIndex(x => x[0] === idTrx);
+      if (idx >= 0) state.trx[idx][4] = Number(bayarCode) || 0;
+    } else if (op === 'TRX_DEL') {
+      state.trx = state.trx.filter(x => x[0] !== p);
+    } else if (op === 'SET_SAVE') {
+      if (p.hargaJual !== undefined) state.set.hargaJual = Number(p.hargaJual) || 0;
+      if (p.komisi !== undefined) state.set.komisi = Number(p.komisi) || 0;
+      if (p.bizInfo) state.set.bizInfo = { ...state.set.bizInfo, ...p.bizInfo };
+      if (p.harianBgColor !== undefined) state.set.harianBgColor = p.harianBgColor;
+      if (p.harianTextColor !== undefined) state.set.harianTextColor = p.harianTextColor;
+      if (Array.isArray(p.kategoriList)) state.set.kategoriList = [...p.kategoriList];
+    }
+  }
+
+  // Hitung ulang totalMenu aktual per supplier
+  const mnuCount = {};
+  state.mnu.forEach(m => { mnuCount[m[1]] = (mnuCount[m[1]] || 0) + 1; });
+  state.sup.forEach(s => { s[6] = mnuCount[s[0]] || 0; });
+
+  return state;
+}
+
+const calcTrxSummary = (trxTuple) => {
+  const items = trxTuple[5] || [];
+  const hargaJual = Number(trxTuple[6]) || 0;
+  const komisi = Number(trxTuple[7]) || 0;
+  let totalTitip = 0, totalSisa = 0, totalLaku = 0;
+  for (const it of items) {
+    const t = Number(it[1]) || 0;
+    const s = Number(it[2]) || 0;
+    const l = Math.max(0, t - s);
+    totalTitip += t;
+    totalSisa += s;
+    totalLaku += l;
+  }
+  const bruto = totalLaku * hargaJual;
+  const potKomisi = totalLaku * komisi;
+  const bersih = Math.max(0, bruto - potKomisi);
+  return { totalTitip, totalSisa, totalLaku, bruto, potKomisi, bersih, hargaJual, komisi };
+};
+
+const bayarLabel = (code) => {
+  const n = Number(code) || 0;
+  if (n === 2) return 'Lunas - Transfer';
+  if (n === 1) return 'Lunas - Tunai';
+  return 'Belum Dibayar';
+};
+
+/* ============================================================================
+ * IKON SVG RINGAN
+ * ============================================================================ */
+const I = {
+  Plus: (p) => html`<svg ...${p} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>`,
+  Trash: (p) => html`<svg ...${p} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>`,
+  Edit: (p) => html`<svg ...${p} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`,
+  X: (p) => html`<svg ...${p} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`,
+  Check: (p) => html`<svg ...${p} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>`,
+  Inbox: (p) => html`<svg ...${p} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg>`,
+  Search: (p) => html`<svg ...${p} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>`,
+  Users: (p) => html`<svg ...${p} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`,
+  Coffee: (p) => html`<svg ...${p} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>`,
+  Printer: (p) => html`<svg ...${p} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>`,
+  Settings: (p) => html`<svg ...${p} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>`,
+  Cloud: (p) => html`<svg ...${p} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/></svg>`,
+  MessageCircle: (p) => html`<svg ...${p} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>`,
+  Sun: (p) => html`<svg ...${p} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>`,
+  Moon: (p) => html`<svg ...${p} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>`,
+  Scan: (p) => html`<svg ...${p} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><line x1="7" y1="12" x2="17" y2="12"/></svg>`,
+  Copy: (p) => html`<svg ...${p} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>`,
+  Alert: (p) => html`<svg ...${p} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`,
+  Eye: (p) => html`<svg ...${p} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`,
+  FileText: (p) => html`<svg ...${p} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>`,
+  Download: (p) => html`<svg ...${p} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>`,
+  Lock: (p) => html`<svg ...${p} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>`,
+  ChevronLeft: (p) => html`<svg ...${p} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg>`,
+  ChevronRight: (p) => html`<svg ...${p} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>`
+};
+
+function Toast({ msg, type }) {
+  const isErr = type === 'err';
+  return html`
+    <div class="toast" style=${{ background: isErr ? 'var(--expense)' : 'var(--ink)' }}>
+      ${isErr ? html`<${I.X} style=${{ width: 15, height: 15, flexShrink: 0 }} />` : html`<${I.Check} style=${{ width: 15, height: 15, flexShrink: 0 }} />`}
+      <span>${msg}</span>
+    </div>
+  `;
+}
+
+/* ============================================================================
+ * OVERLAY CETAK (STRUK THERMAL 57mm 2-BARIS & REKAP A4 PDF)
+ * ============================================================================ */
+function PrintOverlay({ printData, bizInfo, logoUrl, getSupplierName, getMenuName }) {
+  useEffect(() => {
+    if (printData && (printData.type === 'titip' || printData.type === 'ambil') && window.QRCode) {
+      setTimeout(() => {
+        const el = document.getElementById('print-qrcode');
+        if (el) {
+          el.innerHTML = '';
+          new QRCode(el, {
+            text: printData.trx[0],
+            width: 92,
+            height: 92,
+            colorDark: '#000000',
+            colorLight: '#ffffff',
+            correctLevel: QRCode.CorrectLevel.M
+          });
+        }
+      }, 40);
+    }
+  }, [printData]);
+
+  if (!printData) return null;
+
+  const BizHeader = () => html`
+    ${logoUrl && html`<div style=${{ width: '100%', marginBottom: 6 }}><img src=${logoUrl} style=${{ maxHeight: 54, maxWidth: '100%', display: 'block', margin: '0 auto' }} /></div>`}
+    <h3>${bizInfo.nama || 'TITIP BEKAL'}</h3>
+    <div class="biz-info">
+      ${bizInfo.alamat && html`<div>${bizInfo.alamat}</div>`}
+      ${(bizInfo.telp || bizInfo.sosmed) && html`<div>${bizInfo.telp}${bizInfo.telp && bizInfo.sosmed ? ' | ' : ''}${bizInfo.sosmed}</div>`}
+    </div>
+    <div class="dashed-line"></div>
+  `;
+
+  if (printData.type === 'kasir') {
+    const r = printData.receipt;
+    const row = (a, b, bold) => html`<div style=${{ display: 'flex', justifyContent: 'space-between', fontWeight: bold ? 'bold' : 'normal' }}><span>${a}</span><span>${b}</span></div>`;
+    const wkt = new Date(r.waktu).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }).replace('.', ':');
+    return html`
+      <div class="print-struk">
+        <${BizHeader} />
+        ${row('Nota: #' + pad3(r.no), wkt)}
+        <div>${dateID(r.tanggal, { day: 'numeric', month: 'short', year: 'numeric' })}</div>
+        <div class="dashed-line"></div>
+        ${r.items.map(i => html`
+          <div class="item-block">
+            <div class="item-name">${i.nama}</div>
+            <div class="item-meta">
+              <span>${i.qty} x Rp ${formatRp(i.harga)}</span>
+              <b>Rp ${formatRp(i.qty * i.harga)}</b>
+            </div>
+          </div>
+        `)}
+        <div style=${{ marginTop: 6 }}>
+          ${row('TOTAL', 'Rp ' + formatRp(r.total), true)}
+          ${row(r.metode === 'tunai' ? 'Tunai' : 'Non-tunai', 'Rp ' + formatRp(r.bayar))}
+          ${r.metode === 'tunai' && row('Kembali', 'Rp ' + formatRp(r.kembali))}
+        </div>
+        <div class="dashed-line"></div>
+        <p style=${{ textAlign: 'center', margin: '8px 0 0 0', fontSize: 10 }}>Terima Kasih</p>
+        <br/><br/>
+      </div>
+    `;
+  }
+
+  if (printData.type === 'titip' || printData.type === 'ambil') {
+    const trx = printData.trx;
+    const isAmbil = printData.type === 'ambil';
+    const tgl = dateID(trx[1], { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+    const supName = getSupplierName(trx[2]);
+    const sum = calcTrxSummary(trx);
+    const items = trx[5] || [];
+
+    return html`
+      <div class="print-struk">
+        <${BizHeader} />
+        <div style=${{ fontSize: 11 }}>
+          <div><b>Tipe : ${isAmbil ? 'REKAP PENGAMBILAN' : 'TANDA TERIMA TITIP'}</b></div>
+          <div>Tgl  : ${tgl}</div>
+          <div>Mitra: <b>${supName}</b></div>
+          <div>Nota : ${trx[0]}</div>
+        </div>
+        <div id="print-qrcode" style=${{ display: 'flex', justifyContent: 'center', marginTop: 8, marginBottom: 4 }}></div>
+        <div class="dashed-line"></div>
+
+        ${items.map(([mId, qty, sisa]) => {
+          const laku = Math.max(0, qty - sisa);
+          return html`
+            <div class="item-block">
+              <div class="item-name">${getMenuName(mId)}</div>
+              ${!isAmbil ? html`
+                <div class="item-meta">
+                  <span>Jumlah Titipan</span>
+                  <b>${qty} pcs</b>
+                </div>
+              ` : html`
+                <div class="item-meta">
+                  <span>Ttp: ${qty} | Sisa: ${sisa}</span>
+                  <b>Laku: ${laku} pcs</b>
+                </div>
+              `}
+            </div>
+          `;
+        })}
+
+        ${!isAmbil ? html`
+          <div style=${{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', marginTop: 6 }}>
+            <span>Total Titip</span>
+            <span>${sum.totalTitip} pcs</span>
+          </div>
+          <div style=${{ fontSize: 10, marginTop: 4 }}>*Simpan struk untuk pengambilan wadah & hasil.</div>
+        ` : html`
+          <div style=${{ marginTop: 6, display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <div style=${{ display: 'flex', justifyContent: 'space-between' }}><span>Total Laku (@${formatRp(sum.hargaJual)}):</span><span>${sum.totalLaku} pcs</span></div>
+            <div style=${{ display: 'flex', justifyContent: 'space-between' }}><span>Penjualan Bruto:</span><span>Rp ${formatRp(sum.bruto)}</span></div>
+            <div style=${{ display: 'flex', justifyContent: 'space-between' }}><span>Komisi (@${formatRp(sum.komisi)}):</span><span>-Rp ${formatRp(sum.potKomisi)}</span></div>
+            <div class="dashed-line"></div>
+            <div style=${{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', fontSize: 12.5 }}>
+              <span>HAK SUPPLIER:</span>
+              <span>Rp ${formatRp(sum.bersih)}</span>
+            </div>
+            <div style=${{ display: 'flex', justifyContent: 'space-between', marginTop: 3 }}>
+              <span>Pembayaran:</span>
+              <b>${bayarLabel(trx[4]).toUpperCase()}</b>
+            </div>
+          </div>
+        `}
+
+        <div class="dashed-line"></div>
+        <p style=${{ textAlign: 'center', margin: '8px 0 0 0', fontSize: 10 }}>Terima Kasih</p>
+        <br/><br/>
+      </div>
+    `;
+  }
+
+  if (printData.type === 'rekap') {
+    const { title, periodLabel, mode, rows, totals } = printData;
+    return html`
+      <div class="print-a4">
+        <div style=${{ textAlign: 'center', borderBottom: '2px solid #000', paddingBottom: 10, marginBottom: 14 }}>
+          ${logoUrl && html`<img src=${logoUrl} style=${{ maxHeight: 65, display: 'block', margin: '0 auto 6px' }} />`}
+          <h2 style=${{ margin: 0, fontSize: 20 }}>${bizInfo.nama || 'TITIP BEKAL'}</h2>
+          <div style=${{ fontSize: 12, marginTop: 2 }}>${bizInfo.alamat} ${bizInfo.telp ? '• ' + bizInfo.telp : ''}</div>
+          <h3 style=${{ margin: '10px 0 2px 0', fontSize: 15 }}>${title}</h3>
+          <div style=${{ fontSize: 12 }}>Periode: <b>${periodLabel}</b></div>
+        </div>
+
+        ${mode === 'global' && html`
+          <table>
+            <thead>
+              <tr>
+                <th>No</th><th>Tanggal</th><th>Supplier</th><th>Status</th>
+                <th style=${{ textAlign: 'right' }}>Titip</th>
+                <th style=${{ textAlign: 'right' }}>Sisa</th>
+                <th style=${{ textAlign: 'right' }}>Laku</th>
+                <th style=${{ textAlign: 'right' }}>Bruto</th>
+                <th style=${{ textAlign: 'right' }}>Komisi</th>
+                <th style=${{ textAlign: 'right' }}>Hak Mitra</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${rows.map((r, idx) => html`
+                <tr>
+                  <td>${idx + 1}</td>
+                  <td>${r.tanggal}</td>
+                  <td>${r.supplier}</td>
+                  <td>${r.statusText}</td>
+                  <td style=${{ textAlign: 'right' }}>${r.titip}</td>
+                  <td style=${{ textAlign: 'right' }}>${r.sisa}</td>
+                  <td style=${{ textAlign: 'right', fontWeight: 'bold' }}>${r.laku}</td>
+                  <td style=${{ textAlign: 'right' }}>${formatRp(r.bruto)}</td>
+                  <td style=${{ textAlign: 'right' }}>${formatRp(r.komisi)}</td>
+                  <td style=${{ textAlign: 'right', fontWeight: 'bold' }}>${formatRp(r.bersih)}</td>
+                </tr>
+              `)}
+              <tr style=${{ fontWeight: 'bold', background: '#f3f4f6' }}>
+                <td colspan="4">TOTAL KESELURUHAN</td>
+                <td style=${{ textAlign: 'right' }}>${totals.titip}</td>
+                <td style=${{ textAlign: 'right' }}>${totals.sisa}</td>
+                <td style=${{ textAlign: 'right' }}>${totals.laku}</td>
+                <td style=${{ textAlign: 'right' }}>${formatRp(totals.bruto)}</td>
+                <td style=${{ textAlign: 'right' }}>${formatRp(totals.komisi)}</td>
+                <td style=${{ textAlign: 'right' }}>${formatRp(totals.bersih)}</td>
+              </tr>
+            </tbody>
+          </table>
+        `}
+
+        ${mode === 'supplier' && html`
+          <table>
+            <thead>
+              <tr>
+                <th>No</th><th>Supplier</th><th>Rekening</th><th style=${{ textAlign: 'right' }}>Nota</th>
+                <th style=${{ textAlign: 'right' }}>Titip</th>
+                <th style=${{ textAlign: 'right' }}>Sisa</th>
+                <th style=${{ textAlign: 'right' }}>Laku</th>
+                <th style=${{ textAlign: 'right' }}>Bruto</th>
+                <th style=${{ textAlign: 'right' }}>Komisi</th>
+                <th style=${{ textAlign: 'right' }}>Hak Mitra</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${rows.map((r, idx) => html`
+                <tr>
+                  <td>${idx + 1}</td>
+                  <td>${r.supplier}</td>
+                  <td>${r.rekening}</td>
+                  <td style=${{ textAlign: 'right' }}>${r.nota}</td>
+                  <td style=${{ textAlign: 'right' }}>${r.titip}</td>
+                  <td style=${{ textAlign: 'right' }}>${r.sisa}</td>
+                  <td style=${{ textAlign: 'right', fontWeight: 'bold' }}>${r.laku}</td>
+                  <td style=${{ textAlign: 'right' }}>${formatRp(r.bruto)}</td>
+                  <td style=${{ textAlign: 'right' }}>${formatRp(r.komisi)}</td>
+                  <td style=${{ textAlign: 'right', fontWeight: 'bold' }}>${formatRp(r.bersih)}</td>
+                </tr>
+              `)}
+              <tr style=${{ fontWeight: 'bold', background: '#f3f4f6' }}>
+                <td colspan="3">TOTAL KESELURUHAN</td>
+                <td style=${{ textAlign: 'right' }}>${totals.nota}</td>
+                <td style=${{ textAlign: 'right' }}>${totals.titip}</td>
+                <td style=${{ textAlign: 'right' }}>${totals.sisa}</td>
+                <td style=${{ textAlign: 'right' }}>${totals.laku}</td>
+                <td style=${{ textAlign: 'right' }}>${formatRp(totals.bruto)}</td>
+                <td style=${{ textAlign: 'right' }}>${formatRp(totals.komisi)}</td>
+                <td style=${{ textAlign: 'right' }}>${formatRp(totals.bersih)}</td>
+              </tr>
+            </tbody>
+          </table>
+        `}
+
+        ${mode === 'menu' && html`
+          <table>
+            <thead>
+              <tr>
+                <th>No</th><th>Nama Menu</th><th>Supplier</th><th>Kategori</th>
+                <th style=${{ textAlign: 'right' }}>Titip</th>
+                <th style=${{ textAlign: 'right' }}>Sisa</th>
+                <th style=${{ textAlign: 'right' }}>Laku</th>
+                <th style=${{ textAlign: 'right' }}>Bruto</th>
+                <th style=${{ textAlign: 'right' }}>Komisi</th>
+                <th style=${{ textAlign: 'right' }}>Hak Mitra</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${rows.map((r, idx) => html`
+                <tr>
+                  <td>${idx + 1}</td>
+                  <td>${r.menu}</td>
+                  <td>${r.supplier}</td>
+                  <td>${r.kategori}</td>
+                  <td style=${{ textAlign: 'right' }}>${r.titip}</td>
+                  <td style=${{ textAlign: 'right' }}>${r.sisa}</td>
+                  <td style=${{ textAlign: 'right', fontWeight: 'bold' }}>${r.laku}</td>
+                  <td style=${{ textAlign: 'right' }}>${formatRp(r.bruto)}</td>
+                  <td style=${{ textAlign: 'right' }}>${formatRp(r.komisi)}</td>
+                  <td style=${{ textAlign: 'right', fontWeight: 'bold' }}>${formatRp(r.bersih)}</td>
+                </tr>
+              `)}
+              <tr style=${{ fontWeight: 'bold', background: '#f3f4f6' }}>
+                <td colspan="4">TOTAL KESELURUHAN</td>
+                <td style=${{ textAlign: 'right' }}>${totals.titip}</td>
+                <td style=${{ textAlign: 'right' }}>${totals.sisa}</td>
+                <td style=${{ textAlign: 'right' }}>${totals.laku}</td>
+                <td style=${{ textAlign: 'right' }}>${formatRp(totals.bruto)}</td>
+                <td style=${{ textAlign: 'right' }}>${formatRp(totals.komisi)}</td>
+                <td style=${{ textAlign: 'right' }}>${formatRp(totals.bersih)}</td>
+              </tr>
+            </tbody>
+          </table>
+        `}
+      </div>
+    `;
+  }
+
+  return null;
+}
+
+/* ============================================================================
+ * MODUL MANDIRI: KASIR PENJUALAN LOKAL (TERPISAH DARI CLOUD & HARGA CUSTOM)
+ * ============================================================================ */
+function KasirLokal({ menus, defaultHarga, notify, executePrint }) {
+  const baseHarga = Number(defaultHarga) || 2000;
+  const today = localDate();
+  const [sales, setSales] = useState(() => LS.get(KEYS.KASIR, []));
+  // cart: { [menuId]: { qty: number, harga: number } }
+  const [cart, setCart] = useState({});
+  const [q, setQ] = useState('');
+  const [kat, setKat] = useState('');
+  const [metode, setMetode] = useState('tunai');
+  const [bayar, setBayar] = useState('');
+  const [viewDate, setViewDate] = useState(today);
+  const [customNama, setCustomNama] = useState('');
+  const [customHarga, setCustomHarga] = useState('');
+
+  const saveSales = (arr) => { setSales(arr); LS.set(KEYS.KASIR, arr); };
+  const cats = useMemo(() => [...new Set(menus.map(m => m[3] || 'Lainnya'))], [menus]);
+  const list = useMemo(() =>
+    menus.filter(m => (!kat || (m[3] || 'Lainnya') === kat) && m[2].toLowerCase().includes(q.toLowerCase())),
+    [menus, kat, q]
+  );
+
+  const lines = useMemo(() => {
+    const menuMap = new Map(menus.map(m => [m[0], m]));
+    return Object.entries(cart)
+      .filter(([_, v]) => v && v.qty > 0)
+      .map(([id, v]) => {
+        const m = menuMap.get(id);
+        return {
+          menuId: id,
+          nama: v.customNama || (m ? m[2] : id),
+          qty: v.qty,
+          harga: Math.max(0, Number(v.harga) || 0)
+        };
+      });
+  }, [cart, menus]);
+
+  const total = lines.reduce((s, l) => s + l.qty * l.harga, 0);
+  const bayarNum = metode === 'tunai' ? Math.max(0, Number(bayar) || 0) : total;
+  const kembali = bayarNum - total;
+  const canPay = lines.length > 0 && kembali >= 0;
+
+  const setItemQty = (id, nextQty, fallbackNama = '') => {
+    setCart(prev => {
+      const next = { ...prev };
+      const qInt = Math.floor(Number(nextQty) || 0);
+      if (qInt <= 0) {
+        delete next[id];
+      } else {
+        const existing = next[id] || { qty: 0, harga: baseHarga, customNama: fallbackNama };
+        next[id] = { ...existing, qty: qInt };
+      }
+      return next;
+    });
+  };
+
+  const setItemHarga = (id, newPrice) => {
+    setCart(prev => {
+      if (!prev[id]) return prev;
+      return { ...prev, [id]: { ...prev[id], harga: Math.max(0, Number(newPrice) || 0) } };
+    });
+  };
+
+  const addCustomItem = (e) => {
+    e.preventDefault();
+    const nm = customNama.trim();
+    if (!nm) return notify('Isi nama item custom dulu', 'err');
+    const hrg = Number(customHarga) > 0 ? Number(customHarga) : baseHarga;
+    const cid = 'cst-' + Date.now();
+    setCart(prev => ({ ...prev, [cid]: { qty: 1, harga: hrg, customNama: nm } }));
+    setCustomNama('');
+    setCustomHarga('');
+  };
+
+  const viewSales = sales.filter(s => s.tanggal === viewDate);
+  const omzet = viewSales.reduce((s, x) => s + x.total, 0);
+  const viewPcs = viewSales.reduce((s, x) => s + x.items.reduce((a, i) => a + i.qty, 0), 0);
+
+  const bayarDanCetak = () => {
+    if (!canPay) return;
+    const todays = sales.filter(s => s.tanggal === today);
+    const sale = {
+      id: 'jual-' + Date.now(),
+      no: Math.max(0, ...todays.map(s => s.no)) + 1,
+      tanggal: today,
+      waktu: new Date().toISOString(),
+      items: lines,
+      total,
+      bayar: bayarNum,
+      kembali,
+      metode
+    };
+    saveSales([sale, ...sales]);
+    setCart({});
+    setBayar('');
+    executePrint({ type: 'kasir', receipt: sale });
+    notify('Transaksi kasir lokal tersimpan');
+  };
+
+  const hapus = (s) => {
+    if (!confirm('Hapus transaksi #' + pad3(s.no) + '?')) return;
+    saveSales(sales.filter(x => x.id !== s.id));
+  };
+
+  const lbl = { fontSize: 11, color: 'var(--muted)' };
+  return html`
+    <div class="anim-up" style=${{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      <div class="card" style=${{ padding: 14 }}>
+        <div style=${{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+          <div>
+            <h2 style=${{ fontSize: 15, fontWeight: 700, margin: 0 }}>Kasir Penjualan (Lokal)</h2>
+            <div style=${{ fontSize: 11, color: 'var(--muted)' }}>Terpisah dari Cloud • Mendukung harga custom per item</div>
+          </div>
+          <input type="date" class="input-field" style=${{ width: 'auto', padding: '6px 10px', fontSize: 12 }} value=${viewDate} onInput=${e => setViewDate(e.target.value || today)} />
+        </div>
+        <div style=${{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 8, textAlign: 'center' }}>
+          ${[['Omzet Lokal', 'Rp ' + formatRp(omzet)], ['Transaksi', viewSales.length], ['Terjual (pcs)', viewPcs]].map(([a, b]) => html`
+            <div style=${{ background: 'var(--paper2)', borderRadius: 8, padding: '8px 4px' }}>
+              <div style=${lbl}>${a}</div>
+              <div style=${{ fontSize: 14, fontWeight: 700 }}>${b}</div>
+            </div>
+          `)}
+        </div>
+      </div>
+
+      <div class="card" style=${{ padding: 14, display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <div style=${{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <h3 style=${{ fontSize: 14, fontWeight: 700, margin: 0 }}>Pilih Menu</h3>
+          <span style=${lbl}>Harga awal: Rp ${formatRp(baseHarga)}</span>
+        </div>
+        <input type="text" class="input-field" placeholder="Cari menu untuk kasir..." value=${q} onInput=${e => setQ(e.target.value)} />
+        <div style=${{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+          ${['', ...cats].map(c => html`
+            <button class=${c === kat ? 'btn-primary' : 'btn-ghost'} style=${{ padding: '4px 10px', fontSize: 12 }} onClick=${() => setKat(c)}>
+              ${c || 'Semua'}
+            </button>
+          `)}
+        </div>
+        <div style=${{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, maxHeight: 240, overflowY: 'auto' }}>
+          ${list.slice(0, 40).map(m => html`
+            <button key=${m[0]} class="btn-ghost" style=${{ flexDirection: 'column', alignItems: 'flex-start', padding: 9, background: 'var(--paper2)', position: 'relative', textAlign: 'left' }} onClick=${() => setItemQty(m[0], (cart[m[0]]?.qty || 0) + 1)}>
+              <span style=${{ fontSize: 12.5, fontWeight: 600, color: 'var(--ink)', lineHeight: 1.3 }}>${m[2]}</span>
+              <span style=${lbl}>${m[3] || 'Lainnya'}</span>
+              ${cart[m[0]]?.qty > 0 && html`
+                <span style=${{ position: 'absolute', top: 5, right: 5, background: 'var(--accent)', color: '#fff', borderRadius: 10, fontSize: 11, fontWeight: 700, padding: '1px 7px' }}>
+                  ${cart[m[0]].qty}
+                </span>
+              `}
+            </button>
+          `)}
+        </div>
+
+        <form onSubmit=${addCustomItem} style=${{ display: 'grid', gridTemplateColumns: '1fr 95px auto', gap: 6, borderTop: '1px dashed var(--border)', paddingTop: 10 }}>
+          <input type="text" class="input-field" style=${{ fontSize: 12, padding: '7px 10px' }} placeholder="Item non-menu / bebas..." value=${customNama} onInput=${e => setCustomNama(e.target.value)} />
+          <input type="number" class="input-field" style=${{ fontSize: 12, padding: '7px 8px' }} placeholder="Harga" value=${customHarga} onInput=${e => setCustomHarga(e.target.value)} />
+          <button type="submit" class="btn-ghost" style=${{ padding: '7px 10px', fontSize: 12 }}>+ Item</button>
+        </form>
+      </div>
+
+      <div class="card" style=${{ padding: 14, display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <div style=${{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <h3 style=${{ fontSize: 14, fontWeight: 700, margin: 0 }}>Keranjang (Klik harga untuk custom)</h3>
+          ${lines.length > 0 && html`<button class="btn-ghost" style=${{ padding: '3px 8px', fontSize: 11, color: 'var(--expense)' }} onClick=${() => setCart({})}>Kosongkan</button>`}
+        </div>
+        ${lines.length === 0 ? html`<div style=${{ fontSize: 13, color: 'var(--muted)' }}>Ketuk menu di atas untuk menambahkan ke keranjang.</div>` : lines.map(l => html`
+          <div key=${l.menuId} style=${{ display: 'flex', flexDirection: 'column', gap: 6, borderBottom: '1px solid var(--border)', paddingBottom: 8 }}>
+            <div style=${{ fontSize: 13, fontWeight: 600 }}>${l.nama}</div>
+            <div style=${{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span style=${{ fontSize: 11, color: 'var(--muted)' }}>@Rp</span>
+              <input type="number" min="0" class="input-field" style=${{ width: 82, padding: '4px 6px', fontSize: 12 }} value=${l.harga} onInput=${e => setItemHarga(l.menuId, e.target.value)} />
+              <div style=${{ flex: 1 }}></div>
+              <button class="btn-ghost" style=${{ padding: '2px 9px', fontSize: 15 }} onClick=${() => setItemQty(l.menuId, l.qty - 1)}>−</button>
+              <input type="number" min="1" class="input-field" style=${{ width: 48, padding: '4px', textAlign: 'center', fontSize: 13 }} value=${l.qty} onInput=${e => setItemQty(l.menuId, e.target.value)} />
+              <button class="btn-ghost" style=${{ padding: '2px 9px', fontSize: 15 }} onClick=${() => setItemQty(l.menuId, l.qty + 1)}>+</button>
+              <div style=${{ width: 68, textAlign: 'right', fontSize: 13, fontWeight: 700 }}>${formatRp(l.qty * l.harga)}</div>
+            </div>
+          </div>
+        `)}
+
+        <div style=${{ display: 'flex', justifyContent: 'space-between', fontSize: 17, fontWeight: 700 }}>
+          <span>Total</span><span>Rp ${formatRp(total)}</span>
+        </div>
+        <div class="tab-bar">
+          <button class=${'tab-btn ' + (metode === 'tunai' ? 'active' : '')} onClick=${() => setMetode('tunai')}>Tunai</button>
+          <button class=${'tab-btn ' + (metode === 'non' ? 'active' : '')} onClick=${() => setMetode('non')}>Non-tunai</button>
+        </div>
+        ${metode === 'tunai' && html`
+          <input type="number" min="0" class="input-field" placeholder="Uang diterima (Rp)" value=${bayar} onInput=${e => setBayar(e.target.value)} />
+          <div style=${{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+            <button class="btn-ghost" style=${{ padding: '4px 10px', fontSize: 12 }} onClick=${() => setBayar(String(total))}>Uang Pas</button>
+            ${[5000, 10000, 20000, 50000, 100000].map(v => html`
+              <button class="btn-ghost" style=${{ padding: '4px 10px', fontSize: 12 }} onClick=${() => setBayar(String(v))}>${formatRp(v)}</button>
+            `)}
+          </div>
+          <div style=${{ display: 'flex', justifyContent: 'space-between', fontSize: 13.5, fontWeight: 600, color: kembali < 0 ? 'var(--expense)' : 'var(--success)' }}>
+            <span>${kembali < 0 ? 'Kurang' : 'Kembalian'}</span>
+            <span>Rp ${formatRp(Math.abs(kembali))}</span>
+          </div>
+        `}
+        <button class="btn-primary" disabled=${!canPay} onClick=${bayarDanCetak}>
+          <${I.Printer} style=${{ width: 16, height: 16 }} /> Bayar & Cetak Struk
+        </button>
+      </div>
+
+      <div>
+        <h3 style=${{ fontSize: 14, fontWeight: 700, marginBottom: 8 }}>Riwayat Kasir (${dateID(viewDate, { day: 'numeric', month: 'short', year: 'numeric' })})</h3>
+        ${viewSales.length === 0 ? html`<div style=${{ fontSize: 13, color: 'var(--muted)', textAlign: 'center', padding: 14 }}>Belum ada transaksi kasir di tanggal ini.</div>` : html`
+          <div style=${{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            ${viewSales.map(s => html`
+              <div class="card" key=${s.id} style=${{ padding: 11, display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div style=${{ flex: 1, minWidth: 0 }}>
+                  <div style=${{ fontSize: 13.5, fontWeight: 700 }}>#${pad3(s.no)} • Rp ${formatRp(s.total)} <span style=${{ fontSize: 11, fontWeight: 500, color: 'var(--muted)' }}>(${s.metode === 'tunai' ? 'Tunai' : 'Non-tunai'})</span></div>
+                  <div style=${{ ...lbl, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>${s.items.map(i => `${i.qty}x ${i.nama}`).join(', ')}</div>
+                </div>
+                <button class="btn-ghost" style=${{ padding: 6, border: 'none', color: 'var(--info)' }} title="Cetak ulang" onClick=${() => executePrint({ type: 'kasir', receipt: s })}><${I.Printer} style=${{ width: 16, height: 16 }} /></button>
+                <button class="btn-ghost" style=${{ padding: 6, border: 'none', color: 'var(--expense)' }} title="Hapus" onClick=${() => hapus(s)}><${I.Trash} style=${{ width: 16, height: 16 }} /></button>
+              </div>
+            `)}
+          </div>
+        `}
+      </div>
+    </div>
+  `;
+}
+
+/* ============================================================================
+ * KOMPONEN UTAMA: TITIP BEKAL v3.0
+ * ============================================================================ */
+function App() {
+  const [dark, setDark] = useState(() => LS.get(KEYS.THEME, 'light') === 'dark');
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', dark);
+    LS.set(KEYS.THEME, dark ? 'dark' : 'light');
+  }, [dark]);
+
+  const [activeTab, setActiveTab] = useState('transaksi');
+  const [toast, setToast] = useState(null);
+  const toastTimer = useRef(null);
+  const notify = useCallback((msg, type = 'ok') => {
+    if (toastTimer.current) clearTimeout(toastTimer.current);
+    setToast({ msg, type });
+    toastTimer.current = setTimeout(() => setToast(null), 3200);
+  }, []);
+
+  // 3 Lapisan State Sinkronisasi + Cache Historis + Logo Lokal
+  const [serverCache, setServerCache] = useState(() => LS.get(KEYS.CACHE, DEFAULT_CACHE()));
+  const [outbox, setOutbox] = useState(() => LS.get(KEYS.OUTBOX, []));
+  const [histCache, setHistCache] = useState(() => LS.get(KEYS.HIST, {}));
+  const [localLogo, setLocalLogo] = useState(() => LS.get(KEYS.LOGO, ''));
+  const [deviceId, setDeviceId] = useState(() => getOrCreateDeviceId());
+  const [syncUrl, setSyncUrl] = useState(() => LS.get(KEYS.SYNC_URL, ''));
+  const [syncState, setSyncState] = useState('idle'); // 'idle' | 'syncing' | 'ok' | 'err'
+  const [isLoadingHist, setIsLoadingHist] = useState(false);
+
+  // Gabungan State Efektif (0 ms Optimistic UI)
+  const db = useMemo(() => computeEffectiveState(serverCache, outbox), [serverCache, outbox]);
+  const todayStr = localDate();
+  const minActiveDate = db.md || addDaysStr(todayStr, -3);
+
+  const supplierMap = useMemo(() => new Map(db.sup.map(s => [s[0], s])), [db.sup]);
+  const menuMap = useMemo(() => new Map(db.mnu.map(m => [m[0], m])), [db.mnu]);
+  const getSupplier = useCallback((id) => supplierMap.get(id) || null, [supplierMap]);
+  const getSupplierName = useCallback((id) => supplierMap.get(id)?.[1] || id, [supplierMap]);
+  const getMenuName = useCallback((id) => menuMap.get(id)?.[2] || id, [menuMap]);
+
+  // Ref untuk mencegah race condition saat auto-sync
+  const cacheRef = useRef(serverCache);
+  cacheRef.current = serverCache;
+  const outboxRef = useRef(outbox);
+  outboxRef.current = outbox;
+  const isSyncingRef = useRef(false);
+  const pendingSyncRef = useRef(false);
+  const debounceRef = useRef(null);
+
+  const syncWithServer = useCallback(async ({ manual = false, histRange = null } = {}) => {
+    const activeUrl = LS.get(KEYS.SYNC_URL, '');
+    if (!activeUrl) {
+      if (manual) notify('Isi URL Web App Google Apps Script di Pengaturan terlebih dahulu', 'err');
+      return null;
+    }
+
+    if (isSyncingRef.current && !histRange) {
+      pendingSyncRef.current = true;
+      return null;
+    }
+
+    isSyncingRef.current = true;
+    setSyncState('syncing');
+    if (histRange) setIsLoadingHist(true);
+
+    try {
+      const currentCache = cacheRef.current;
+      const snapshotQueue = [...outboxRef.current];
+      const payload = {
+        v: Number(currentCache.v) || 0,
+        d: LS.get(KEYS.DEVICE, getOrCreateDeviceId()),
+        q: snapshotQueue
+      };
+      if (histRange && histRange.from && histRange.to) {
+        payload.hist = { from: histRange.from, to: histRange.to };
+      }
+
+      const res = await fetch(activeUrl, {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      }).then(r => r.json());
+
+      if (res.s === -1) {
+        setSyncState('err');
+        notify('Error Server: ' + (res.err || 'Gagal memproses'), 'err');
+        return null;
+      }
+
+      // Hapus antrean yang sudah mendapat konfirmasi ack dari server
+      if (Array.isArray(res.ack) && res.ack.length > 0) {
+        const ackSet = new Set(res.ack);
+        const remaining = outboxRef.current.filter(c => !ackSet.has(c.cid));
+        outboxRef.current = remaining;
+        setOutbox(remaining);
+        LS.set(KEYS.OUTBOX, remaining);
+      }
+
+      if (Array.isArray(res.rej) && res.rej.length > 0) {
+        notify('Sebagian perintah ditolak: ' + res.rej[0].reason, 'err');
+      }
+
+      // Perbarui snapshot cache jika versi server berubah (s === 1)
+      if (res.s === 1 && res.db) {
+        const nextCache = {
+          v: Number(res.v) || 0,
+          sd: res.sd || todayStr,
+          md: res.md || addDaysStr(res.sd || todayStr, -3),
+          set: res.db.set || currentCache.set,
+          sup: Array.isArray(res.db.sup) ? res.db.sup : [],
+          mnu: Array.isArray(res.db.mnu) ? res.db.mnu : [],
+          trx: Array.isArray(res.db.trx) ? res.db.trx : []
+        };
+        cacheRef.current = nextCache;
+        setServerCache(nextCache);
+        LS.set(KEYS.CACHE, nextCache);
+      } else if (res.sd || res.md) {
+        const metaUpdated = {
+          ...currentCache,
+          v: Number(res.v) || currentCache.v,
+          sd: res.sd || currentCache.sd,
+          md: res.md || currentCache.md
+        };
+        cacheRef.current = metaUpdated;
+        setServerCache(metaUpdated);
+        LS.set(KEYS.CACHE, metaUpdated);
+      }
+
+      // Simpan data historis jika diminta
+      if (histRange && Array.isArray(res.hist)) {
+        const groupedByDate = {};
+        // Inisialisasi tanggal dalam rentang agar tanggal kosong tidak terus di-fetch ulang
+        let cursor = histRange.from;
+        let guard = 0;
+        while (cursor <= histRange.to && guard < 120) {
+          groupedByDate[cursor] = [];
+          cursor = addDaysStr(cursor, 1);
+          guard++;
+        }
+        for (const tTuple of res.hist) {
+          const dKey = tTuple[1];
+          if (!groupedByDate[dKey]) groupedByDate[dKey] = [];
+          groupedByDate[dKey].push(tTuple);
+        }
+        setHistCache(prev => {
+          const merged = { ...prev, ...groupedByDate };
+          LS.set(KEYS.HIST, merged);
+          return merged;
+        });
+      }
+
+      setSyncState('ok');
+      if (manual) {
+        notify(res.s === 1 ? 'Sinkronisasi Cloud berhasil diperbarui' : 'Data sudah sinkron (versi terbaru)');
+      }
+      return res;
+    } catch (err) {
+      setSyncState('err');
+      if (manual) notify('Sinkronisasi gagal (Periksa koneksi internet / URL GAS)', 'err');
+      return null;
+    } finally {
+      isSyncingRef.current = false;
+      if (histRange) setIsLoadingHist(false);
+      if (pendingSyncRef.current) {
+        pendingSyncRef.current = false;
+        syncWithServer({ manual: false });
+      }
+    }
+  }, [notify, todayStr]);
+
+  const enqueueCommand = useCallback((op, p) => {
+    const dev = LS.get(KEYS.DEVICE, getOrCreateDeviceId());
+    const cmd = {
+      cid: `CMD-${dev}-${Date.now()}-${Math.random().toString(36).substring(2, 5)}`,
+      op,
+      ts: Date.now(),
+      p
+    };
+    const nextOutbox = [...outboxRef.current, cmd];
+    outboxRef.current = nextOutbox;
+    setOutbox(nextOutbox);
+    LS.set(KEYS.OUTBOX, nextOutbox);
+
+    if (LS.get(KEYS.SYNC_URL, '')) {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      debounceRef.current = setTimeout(() => {
+        syncWithServer({ manual: false });
+      }, 900);
+    }
+  }, [syncWithServer]);
+
+  // Sinkronisasi awal saat buka aplikasi & saat tab kembali aktif
+  useEffect(() => {
+    if (LS.get(KEYS.SYNC_URL, '')) {
+      syncWithServer({ manual: false });
+    }
+    const onVisible = () => {
+      if (document.visibilityState === 'visible' && LS.get(KEYS.SYNC_URL, '')) {
+        syncWithServer({ manual: false });
+      }
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => document.removeEventListener('visibilitychange', onVisible);
+  }, [syncWithServer]);
+
+  /* ==========================================================================
+   * NAVIGASI MODAL & FILTER TANGGAL (TERMASUK AUTO-FETCH HISTORIS > 3 HARI)
+   * ========================================================================== */
+  const [modal, setModal] = useState(null);
+  const [txDate, setTxDate] = useState(todayStr);
+  const [txFilterStatus, setTxFilterStatus] = useState('all'); // 'all' | 'titip' | 'unpaid' | 'verified'
+  const [searchTx, setSearchTx] = useState('');
+  const [printData, setPrintData] = useState(null);
+
+  const executePrint = (data) => {
+    setPrintData(data);
+    setTimeout(() => {
+      window.print();
+    }, 350);
+  };
+
+  // Jika user memilih tanggal di luar jendela 3 hari aktif, otomatis tarik dari server
+  useEffect(() => {
+    if (txDate < minActiveDate && syncUrl) {
+      syncWithServer({ manual: false, histRange: { from: txDate, to: txDate } });
+    }
+  }, [txDate, minActiveDate, syncUrl, syncWithServer]);
+
+  const activeDayTransactions = useMemo(() => {
+    if (txDate >= minActiveDate) {
+      return db.trx.filter(t => t[1] === txDate);
+    }
+    return histCache[txDate] || [];
+  }, [txDate, minActiveDate, db.trx, histCache]);
+
+  // Helper menggabungkan transaksi aktif (<= 3 hari) + historis untuk rentang tanggal Rekap
+  const getTransactionsInRange = useCallback((fromD, toD) => {
+    const mapById = new Map();
+    Object.entries(histCache).forEach(([tgl, list]) => {
+      if (tgl >= fromD && tgl <= toD) {
+        (list || []).forEach(t => mapById.set(t[0], t));
+      }
+    });
+    db.trx.forEach(t => {
+      if (t[1] >= fromD && t[1] <= toD) {
+        mapById.set(t[0], t);
+      }
+    });
+    return Array.from(mapById.values()).sort((a, b) => a[1].localeCompare(b[1]) || a[0].localeCompare(b[0]));
+  }, [histCache, db.trx]);
+
+  /* ==========================================================================
+   * SCANNER QR CODE
+   * ========================================================================== */
+  const [rincianTrxId, setRincianTrxId] = useState('');
+
+  useEffect(() => {
+    let scanner = null, done = false;
+    if (modal === 'scan' && window.Html5QrcodeScanner) {
+      setTimeout(() => {
+        const config = { fps: 10, qrbox: { width: 240, height: 240 }, aspectRatio: 1.0 };
+        if (window.Html5QrcodeSupportedFormats) {
+          config.formatsToSupport = [window.Html5QrcodeSupportedFormats.QR_CODE];
+        }
+        scanner = new Html5QrcodeScanner('qr-reader', config, false);
+        scanner.render((decodedText) => {
+          if (done) return;
+          done = true;
+          scanner.clear().catch(() => {});
+          const cleanId = String(decodedText || '').trim();
+          const found = db.trx.find(t => t[0] === cleanId);
+          if (found) {
+            if (found[1] < minActiveDate) {
+              setRincianTrxId(found[0]);
+              setModal('rincian');
+              notify('Transaksi > 3 hari terkunci, membuka rincian');
+            } else {
+              openAmbilModal(found);
+            }
+          } else {
+            setModal(null);
+            notify('Nota tidak ditemukan di data aktif 3 hari terakhir', 'err');
+          }
+        }, () => {});
+      }, 150);
+    }
+    return () => { if (scanner) scanner.clear().catch(() => {}); };
+  }, [modal, db.trx, minActiveDate]);
+
+  /* ==========================================================================
+   * MASTER DATA: SUPPLIER & MENU (PAGINASI 5 ITEM/HALAMAN + PENCARIAN CEPAT)
+   * ========================================================================== */
+  const PAGE_SIZE = 5;
+  const [searchSup, setSearchSup] = useState('');
+  const [supPage, setSupPage] = useState(1);
+  const [searchMnu, setSearchMnu] = useState('');
+  const [filterMnuSup, setFilterMnuSup] = useState('');
+  const [mnuPage, setMnuPage] = useState(1);
+
+  const [supForm, setSupForm] = useState({ id: '', nama: '', hp: '', bank: '', rekening: '', alamat: '' });
+  const openSupplierModal = (supTuple = null) => {
+    if (supTuple) {
+      setSupForm({
+        id: supTuple[0], nama: supTuple[1], hp: supTuple[2] || '',
+        bank: supTuple[3] || '', rekening: supTuple[4] || '', alamat: supTuple[5] || ''
+      });
+    } else {
+      setSupForm({
+        id: 'S-' + Date.now().toString(36).toUpperCase(),
+        nama: '', hp: '', bank: '', rekening: '', alamat: ''
+      });
+    }
+    setModal('supplier');
+  };
+
+  const saveSupplier = (e) => {
+    e.preventDefault();
+    if (!supForm.nama.trim()) return notify('Nama supplier wajib diisi', 'err');
+    enqueueCommand('SUP_SAVE', [
+      supForm.id,
+      supForm.nama.trim(),
+      supForm.hp.trim(),
+      supForm.bank.trim(),
+      supForm.rekening.trim(),
+      supForm.alamat.trim()
+    ]);
+    setModal(null);
+    notify('Data supplier disimpan');
+  };
+
+  const hapusSupplier = (id) => {
+    if (db.mnu.some(m => m[1] === id)) return notify('Gagal: Supplier masih memiliki menu terdaftar', 'err');
+    if (db.trx.some(t => t[2] === id)) return notify('Gagal: Supplier memiliki riwayat transaksi', 'err');
+    if (!confirm('Hapus supplier ini?')) return;
+    enqueueCommand('SUP_DEL', id);
+    notify('Supplier dihapus');
+  };
+
+  const [menuForm, setMenuForm] = useState({ id: '', supplierId: '', nama: '', kategori: '' });
+  const openMenuModal = (menuTuple = null) => {
+    if (menuTuple) {
+      setMenuForm({
+        id: menuTuple[0], supplierId: menuTuple[1], nama: menuTuple[2], kategori: menuTuple[3] || db.set.kategoriList[0] || 'Lainnya'
+      });
+    } else {
+      setMenuForm({
+        id: 'M-' + Date.now().toString(36).toUpperCase(),
+        supplierId: db.sup[0]?.[0] || '',
+        nama: '',
+        kategori: db.set.kategoriList[0] || 'Lainnya'
+      });
+    }
+    setModal('menu');
+  };
+
+  const similarMenus = useMemo(() => {
+    const cleanInput = normalizeMenuName(menuForm.nama);
+    if (cleanInput.length < 3) return [];
+    const results = [];
+    for (const m of db.mnu) {
+      if (m[0] === menuForm.id) continue;
+      const score = calcMenuSimilarity(menuForm.nama, m[2]);
+      const sameSup = m[1] === menuForm.supplierId;
+      if (sameSup && score >= 0.70) {
+        results.push({ menu: m, score, sameSup: true, exact: score === 1 });
+      } else if (!sameSup && score >= 0.78) {
+        results.push({ menu: m, score, sameSup: false, exact: score === 1 });
+      }
+    }
+    return results.sort((a, b) => (Number(b.sameSup) - Number(a.sameSup)) || (b.score - a.score));
+  }, [menuForm.nama, menuForm.supplierId, menuForm.id, db.mnu]);
+
+  const saveMenu = (e) => {
+    e.preventDefault();
+    if (!menuForm.nama.trim() || !menuForm.supplierId) return notify('Pilih supplier dan isi nama menu', 'err');
+
+    const sameSupExact = similarMenus.find(x => x.sameSup && x.exact);
+    const sameSupSim = similarMenus.find(x => x.sameSup && !x.exact);
+    const otherSupMatch = similarMenus.find(x => !x.sameSup);
+
+    if (sameSupExact) {
+      if (!confirm(`Menu Identik Ditemukan!\n"${sameSupExact.menu[2]}" sudah terdaftar pada supplier ini.\n\nTetap lanjut simpan menu ini?`)) return;
+    } else if (sameSupSim) {
+      if (!confirm(`Menu Mirip Ditemukan (${Math.round(sameSupSim.score * 100)}% mirip):\n"${sameSupSim.menu[2]}" pada supplier yang sama.\n\nTetap lanjut simpan menu ini?`)) return;
+    } else if (otherSupMatch) {
+      if (!confirm(`Nama Menu Sama/Mirip di Mitra Lain:\n"${otherSupMatch.menu[2]}" milik ${getSupplierName(otherSupMatch.menu[1])}.\n\nTetap lanjut simpan menu ini?`)) return;
+    }
+
+    enqueueCommand('MENU_SAVE', [
+      menuForm.id,
+      menuForm.supplierId,
+      menuForm.nama.trim(),
+      menuForm.kategori || 'Lainnya'
+    ]);
+    setModal(null);
+    notify('Data menu disimpan');
+  };
+
+  const hapusMenu = (id) => {
+    if (db.trx.some(t => (t[5] || []).some(it => it[0] === id))) {
+      return notify('Gagal: Menu sudah tercatat pada transaksi', 'err');
+    }
+    if (!confirm('Hapus menu ini?')) return;
+    enqueueCommand('MENU_DEL', id);
+    notify('Menu dihapus');
+  };
+
+  /* ==========================================================================
+   * TRANSAKSI TITIP, AMBIL, VERIFIKASI BAYAR, & RINCIAN TANPA CETAK
+   * ========================================================================== */
+  const [titipSup, setTitipSup] = useState('');
+  const [titipSupSearch, setTitipSupSearch] = useState('');
+  const [titipItems, setTitipItems] = useState({});
+  const [editingTitipId, setEditingTitipId] = useState(null);
+
+  const openTitipModal = (existingTrx = null) => {
+    if (existingTrx) {
+      if (existingTrx[1] < minActiveDate) return notify('Transaksi > 3 hari terkunci dan tidak dapat diedit', 'err');
+      setEditingTitipId(existingTrx[0]);
+      setTitipSup(existingTrx[2]);
+      setTitipSupSearch('');
+      const st = {};
+      (existingTrx[5] || []).forEach(([mId, qty]) => { st[mId] = qty; });
+      setTitipItems(st);
+    } else {
+      if (txDate < minActiveDate) return notify('Tidak dapat membuat titipan pada tanggal > 3 hari lalu', 'err');
+      setEditingTitipId(null);
+      setTitipSup('');
+      setTitipSupSearch('');
+      setTitipItems({});
+    }
+    setModal('titip');
+  };
+
+  const saveTitip = (shouldPrint = true) => {
+    if (!titipSup) return notify('Pilih supplier terlebih dahulu', 'err');
+    const itemsArr = Object.entries(titipItems)
+      .filter(([_, qty]) => Number(qty) > 0)
+      .map(([menuId, qty]) => [menuId, Math.floor(Number(qty))]);
+
+    if (itemsArr.length === 0) return notify('Masukkan kuantitas titipan minimal 1 menu', 'err');
+
+    if (!editingTitipId) {
+      const dup = activeDayTransactions.find(t => t[2] === titipSup);
+      if (dup && !confirm(`Supplier ${getSupplierName(titipSup)} sudah memiliki catatan titipan pada tanggal ini. Tambahkan sebagai kloter baru?`)) return;
+    }
+
+    const oldTrx = editingTitipId ? db.trx.find(t => t[0] === editingTitipId) : null;
+    const trxDateTarget = oldTrx ? oldTrx[1] : txDate;
+    const trxId = editingTitipId || `T${trxDateTarget.replace(/-/g, '').slice(2)}-${deviceId}-${Date.now().toString().slice(-4)}`;
+
+    enqueueCommand('TRX_TITIP', [trxId, trxDateTarget, titipSup, itemsArr]);
+
+    if (shouldPrint) {
+      const previewTuple = [
+        trxId, trxDateTarget, titipSup,
+        oldTrx ? oldTrx[3] : 0,
+        oldTrx ? oldTrx[4] : 0,
+        itemsArr.map(([mId, qty]) => [mId, qty, 0]),
+        oldTrx ? oldTrx[6] : db.set.hargaJual,
+        oldTrx ? oldTrx[7] : db.set.komisi
+      ];
+      setModal(null);
+      executePrint({ type: 'titip', trx: previewTuple });
+    } else {
+      setModal(null);
+    }
+    notify(editingTitipId ? 'Titipan diperbarui' : 'Titipan baru tersimpan');
+  };
+
+  // Modal Ambil & Konfirmasi Pembayaran Supplier
+  const [ambilTrxId, setAmbilTrxId] = useState('');
+  const [ambilSisa, setAmbilSisa] = useState({});
+  const [ambilBayarCode, setAmbilBayarCode] = useState(0); // 0=Belum, 1=Tunai, 2=Transfer
+
+  const openAmbilModal = (trxTuple) => {
+    if (trxTuple[1] < minActiveDate) return notify('Transaksi > 3 hari terkunci dan tidak dapat diubah', 'err');
+    setAmbilTrxId(trxTuple[0]);
+    const st = {};
+    (trxTuple[5] || []).forEach(([mId, _, sisa]) => { st[mId] = trxTuple[3] === 1 ? sisa : 0; });
+    setAmbilSisa(st);
+    setAmbilBayarCode(Number(trxTuple[4]) || 0);
+    setModal('ambil');
+  };
+
+  const saveAmbil = (shouldPrint = false) => {
+    const trx = db.trx.find(t => t[0] === ambilTrxId);
+    if (!trx) return notify('Transaksi tidak ditemukan', 'err');
+    const items = trx[5] || [];
+
+    for (const [mId, qty] of items) {
+      const s = Number(ambilSisa[mId]) || 0;
+      if (s < 0 || s > qty) {
+        return notify(`Sisa "${getMenuName(mId)}" tidak valid (0 s/d ${qty})`, 'err');
+      }
+    }
+
+    const sisaPairs = items.map(([mId]) => [mId, Math.floor(Number(ambilSisa[mId]) || 0)]);
+    enqueueCommand('TRX_AMBIL', [trx[0], Number(ambilBayarCode) || 0, sisaPairs]);
+
+    const updatedTuple = [
+      trx[0], trx[1], trx[2], 1, Number(ambilBayarCode) || 0,
+      items.map(([mId, qty]) => [mId, qty, Math.floor(Number(ambilSisa[mId]) || 0)]),
+      trx[6], trx[7]
+    ];
+
+    setModal(null);
+    if (shouldPrint) {
+      executePrint({ type: 'ambil', trx: updatedTuple });
+    }
+    notify(Number(ambilBayarCode) > 0 ? 'Pengambilan & pembayaran terverifikasi' : 'Pengambilan dicatat (Belum Dibayar)');
+  };
+
+  const updatePaymentStatusOnly = (trxTuple, newBayarCode) => {
+    if (trxTuple[1] < minActiveDate) return notify('Transaksi > 3 hari terkunci', 'err');
+    enqueueCommand('TRX_BAYAR', [trxTuple[0], Number(newBayarCode) || 0]);
+    notify(`Status pembayaran diubah: ${bayarLabel(newBayarCode)}`);
+  };
+
+  const hapusTransaksi = (trxTuple) => {
+    if (trxTuple[1] < minActiveDate) return notify('Transaksi > 3 hari terkunci', 'err');
+    if (!confirm(`Hapus transaksi ${getSupplierName(trxTuple[2])} (${trxTuple[0]})?`)) return;
+    enqueueCommand('TRX_DEL', trxTuple[0]);
+    setModal(null);
+    notify('Transaksi dihapus');
+  };
+
+  /* ==========================================================================
+   * FITUR GENERATOR DAFTAR MENU HARIAN -> TEKS RAPI PER KATEGORI (SIAP CANVA)
+   * ========================================================================== */
+  const [harianDate, setHarianDate] = useState(todayStr);
+  const [harianSelected, setHarianSelected] = useState({});
+  const [harianSearch, setHarianSearch] = useState('');
+  const [harianIncludeHeader, setHarianIncludeHeader] = useState(true);
+  const [harianBullet, setHarianBullet] = useState('• '); // '• ' | '- ' | ''
+
+  const autoSelectFromDate = async (targetDate) => {
+    let list = targetDate >= minActiveDate
+      ? db.trx.filter(t => t[1] === targetDate)
+      : (histCache[targetDate] || null);
+
+    if (!list && syncUrl) {
+      const res = await syncWithServer({ manual: false, histRange: { from: targetDate, to: targetDate } });
+      list = res && Array.isArray(res.hist) ? res.hist : [];
+    }
+
+    const nextSel = {};
+    (list || []).forEach(t => {
+      (t[5] || []).forEach(([mId, qty]) => {
+        if (qty > 0) nextSel[mId] = true;
+      });
+    });
+    setHarianSelected(nextSel);
+    const count = Object.keys(nextSel).length;
+    notify(count > 0 ? `${count} menu dari titipan ${targetDate} dipilih otomatis` : `Tidak ada titipan tercatat di tanggal ${targetDate}`);
+  };
+
+  const openHarianModal = () => {
+    setHarianDate(txDate);
+    setHarianSearch('');
+    const initSel = {};
+    activeDayTransactions.forEach(t => {
+      (t[5] || []).forEach(([mId, qty]) => { if (qty > 0) initSel[mId] = true; });
+    });
+    setHarianSelected(initSel);
+    setModal('harian');
+  };
+
+  const canvaMenuText = useMemo(() => {
+    const selectedIds = Object.keys(harianSelected).filter(id => harianSelected[id]);
+    if (selectedIds.length === 0) return '';
+
+    const selectedMenus = db.mnu.filter(m => selectedIds.includes(m[0]));
+    const byCat = {};
+    for (const m of selectedMenus) {
+      const cat = m[3] || 'Lainnya';
+      if (!byCat[cat]) byCat[cat] = [];
+      byCat[cat].push(m[2]);
+    }
+
+    // Urutkan sesuai daftar kategori master, lalu kategori tambahan jika ada
+    const orderedCats = [
+      ...db.set.kategoriList.filter(c => byCat[c] && byCat[c].length > 0),
+      ...Object.keys(byCat).filter(c => !db.set.kategoriList.includes(c))
+    ];
+
+    const lines = [];
+    if (harianIncludeHeader) {
+      lines.push(`DAFTAR MENU ${(db.set.bizInfo.nama || 'TITIP BEKAL').toUpperCase()}`);
+      lines.push(dateID(harianDate, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }));
+      lines.push('');
+    }
+
+    orderedCats.forEach((cat, idx) => {
+      lines.push(cat.toUpperCase());
+      const sortedNames = [...byCat[cat]].sort((a, b) => a.localeCompare(b, 'id'));
+      sortedNames.forEach(nm => {
+        lines.push(`${harianBullet}${nm}`);
+      });
+      if (idx < orderedCats.length - 1) lines.push('');
+    });
+
+    return lines.join('\n');
+  }, [harianSelected, db.mnu, db.set.kategoriList, db.set.bizInfo.nama, harianDate, harianIncludeHeader, harianBullet]);
+
+  /* ==========================================================================
+   * FITUR REKAP PENJUALAN (PDF & CSV — PER HARI / RENTANG TANGGAL — GLOBAL/SUP/MENU)
+   * ========================================================================== */
+  const [rekapPeriodType, setRekapPeriodType] = useState('single'); // 'single' | 'range'
+  const [rekapFrom, setRekapFrom] = useState(txDate);
+  const [rekapTo, setRekapTo] = useState(txDate);
+  const [rekapGroupMode, setRekapGroupMode] = useState('global'); // 'global' | 'supplier' | 'menu'
+  const [rekapOnlyAmbil, setRekapOnlyAmbil] = useState(false);
+
+  const effectiveFrom = rekapFrom;
+  const effectiveTo = rekapPeriodType === 'single' ? rekapFrom : (rekapTo >= rekapFrom ? rekapTo : rekapFrom);
+
+  useEffect(() => {
+    if (modal !== 'rekap') return;
+    if (effectiveFrom < minActiveDate && syncUrl) {
+      const fetchTo = effectiveTo < minActiveDate ? effectiveTo : addDaysStr(minActiveDate, -1);
+      syncWithServer({ manual: false, histRange: { from: effectiveFrom, to: fetchTo } });
+    }
+  }, [modal, effectiveFrom, effectiveTo, minActiveDate, syncUrl, syncWithServer]);
+
+  const rekapComputed = useMemo(() => {
+    const rawTrx = getTransactionsInRange(effectiveFrom, effectiveTo)
+      .filter(t => !rekapOnlyAmbil || t[3] === 1);
+
+    if (rekapGroupMode === 'global') {
+      const rows = rawTrx.map(t => {
+        const s = calcTrxSummary(t);
+        const stAmbil = t[3] === 1 ? 'Diambil' : 'Titip';
+        return {
+          id: t[0],
+          tanggal: t[1],
+          supplier: getSupplierName(t[2]),
+          statusText: `${stAmbil} (${bayarLabel(t[4])})`,
+          titip: s.totalTitip,
+          sisa: s.totalSisa,
+          laku: s.totalLaku,
+          bruto: s.bruto,
+          komisi: s.potKomisi,
+          bersih: s.bersih
+        };
+      });
+      const totals = rows.reduce((acc, r) => ({
+        titip: acc.titip + r.titip, sisa: acc.sisa + r.sisa, laku: acc.laku + r.laku,
+        bruto: acc.bruto + r.bruto, komisi: acc.komisi + r.komisi, bersih: acc.bersih + r.bersih
+      }), { titip: 0, sisa: 0, laku: 0, bruto: 0, komisi: 0, bersih: 0 });
+      return { rows, totals };
+    }
+
+    if (rekapGroupMode === 'supplier') {
+      const map = new Map();
+      for (const t of rawTrx) {
+        const sId = t[2];
+        const supObj = getSupplier(sId);
+        const sum = calcTrxSummary(t);
+        if (!map.has(sId)) {
+          map.set(sId, {
+            supplierId: sId,
+            supplier: supObj ? supObj[1] : sId,
+            rekening: supObj && (supObj[3] || supObj[4]) ? `${supObj[3]} ${supObj[4]}`.trim() : '-',
+            nota: 0, titip: 0, sisa: 0, laku: 0, bruto: 0, komisi: 0, bersih: 0
+          });
+        }
+        const cur = map.get(sId);
+        cur.nota += 1;
+        cur.titip += sum.totalTitip;
+        cur.sisa += sum.totalSisa;
+        cur.laku += sum.totalLaku;
+        cur.bruto += sum.bruto;
+        cur.komisi += sum.potKomisi;
+        cur.bersih += sum.bersih;
+      }
+      const rows = Array.from(map.values()).sort((a, b) => b.laku - a.laku || a.supplier.localeCompare(b.supplier));
+      const totals = rows.reduce((acc, r) => ({
+        nota: acc.nota + r.nota, titip: acc.titip + r.titip, sisa: acc.sisa + r.sisa,
+        laku: acc.laku + r.laku, bruto: acc.bruto + r.bruto, komisi: acc.komisi + r.komisi, bersih: acc.bersih + r.bersih
+      }), { nota: 0, titip: 0, sisa: 0, laku: 0, bruto: 0, komisi: 0, bersih: 0 });
+      return { rows, totals };
+    }
+
+    // Mode: 'menu'
+    const mMap = new Map();
+    for (const t of rawTrx) {
+      const hj = Number(t[6]) || 0;
+      const km = Number(t[7]) || 0;
+      for (const [mId, qty, sisa] of (t[5] || [])) {
+        const laku = Math.max(0, qty - sisa);
+        const mObj = menuMap.get(mId);
+        if (!mMap.has(mId)) {
+          mMap.set(mId, {
+            menuId: mId,
+            menu: mObj ? mObj[2] : mId,
+            supplier: mObj ? getSupplierName(mObj[1]) : getSupplierName(t[2]),
+            kategori: mObj ? mObj[3] : '-',
+            titip: 0, sisa: 0, laku: 0, bruto: 0, komisi: 0, bersih: 0
+          });
+        }
+        const cur = mMap.get(mId);
+        cur.titip += qty;
+        cur.sisa += sisa;
+        cur.laku += laku;
+        cur.bruto += laku * hj;
+        cur.komisi += laku * km;
+        cur.bersih += Math.max(0, laku * (hj - km));
+      }
+    }
+    const rows = Array.from(mMap.values()).sort((a, b) => b.laku - a.laku || a.menu.localeCompare(b.menu));
+    const totals = rows.reduce((acc, r) => ({
+      titip: acc.titip + r.titip, sisa: acc.sisa + r.sisa, laku: acc.laku + r.laku,
+      bruto: acc.bruto + r.bruto, komisi: acc.komisi + r.komisi, bersih: acc.bersih + r.bersih
+    }), { titip: 0, sisa: 0, laku: 0, bruto: 0, komisi: 0, bersih: 0 });
+    return { rows, totals };
+  }, [getTransactionsInRange, effectiveFrom, effectiveTo, rekapOnlyAmbil, rekapGroupMode, getSupplierName, getSupplier, menuMap]);
+
+  const exportRekapCSV = () => {
+    const { rows, totals } = rekapComputed;
+    if (rows.length === 0) return notify('Tidak ada data pada periode ini untuk diekspor', 'err');
+
+    const esc = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
+    let csvLines = [];
+
+    if (rekapGroupMode === 'global') {
+      csvLines.push(['No', 'ID_Nota', 'Tanggal', 'Supplier', 'Status', 'Titip', 'Sisa', 'Laku', 'Bruto', 'Komisi', 'Hak_Supplier'].map(esc).join(','));
+      rows.forEach((r, i) => {
+        csvLines.push([i + 1, r.id, r.tanggal, r.supplier, r.statusText, r.titip, r.sisa, r.laku, r.bruto, r.komisi, r.bersih].map(esc).join(','));
+      });
+      csvLines.push(['', '', '', 'TOTAL', '', totals.titip, totals.sisa, totals.laku, totals.bruto, totals.komisi, totals.bersih].map(esc).join(','));
+    } else if (rekapGroupMode === 'supplier') {
+      csvLines.push(['No', 'Supplier', 'Rekening', 'Jumlah_Nota', 'Titip', 'Sisa', 'Laku', 'Bruto', 'Komisi', 'Hak_Supplier'].map(esc).join(','));
+      rows.forEach((r, i) => {
+        csvLines.push([i + 1, r.supplier, r.rekening, r.nota, r.titip, r.sisa, r.laku, r.bruto, r.komisi, r.bersih].map(esc).join(','));
+      });
+      csvLines.push(['', 'TOTAL', '', totals.nota, totals.titip, totals.sisa, totals.laku, totals.bruto, totals.komisi, totals.bersih].map(esc).join(','));
+    } else {
+      csvLines.push(['No', 'Nama_Menu', 'Supplier', 'Kategori', 'Titip', 'Sisa', 'Laku', 'Bruto', 'Komisi', 'Hak_Supplier'].map(esc).join(','));
+      rows.forEach((r, i) => {
+        csvLines.push([i + 1, r.menu, r.supplier, r.kategori, r.titip, r.sisa, r.laku, r.bruto, r.komisi, r.bersih].map(esc).join(','));
+      });
+      csvLines.push(['', 'TOTAL', '', '', totals.titip, totals.sisa, totals.laku, totals.bruto, totals.komisi, totals.bersih].map(esc).join(','));
+    }
+
+    const blob = new Blob(['\uFEFF' + csvLines.join('\n')], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `Rekap_${rekapGroupMode}_${effectiveFrom}${effectiveTo !== effectiveFrom ? '_sd_' + effectiveTo : ''}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    notify('File CSV berhasil diunduh');
+  };
+
+  const printRekapPDF = () => {
+    const { rows, totals } = rekapComputed;
+    if (rows.length === 0) return notify('Tidak ada data pada periode ini untuk dicetak', 'err');
+    const modeTitle = rekapGroupMode === 'global'
+      ? 'Laporan Rekap Penjualan Global'
+      : rekapGroupMode === 'supplier'
+        ? 'Laporan Rekap Penjualan Per Supplier'
+        : 'Laporan Rekap Penjualan Per Menu';
+    const periodLabel = effectiveFrom === effectiveTo
+      ? dateID(effectiveFrom, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+      : `${dateID(effectiveFrom, { day: 'numeric', month: 'short', year: 'numeric' })} s/d ${dateID(effectiveTo, { day: 'numeric', month: 'short', year: 'numeric' })}`;
+
+    executePrint({
+      type: 'rekap',
+      title: modeTitle,
+      periodLabel,
+      mode: rekapGroupMode,
+      rows,
+      totals
+    });
+  };
+
+  /* ==========================================================================
+   * FORM PENGATURAN GLOBAL + MIGRASI v2.1
+   * ========================================================================== */
+  const [formSet, setFormSet] = useState(db.set);
+  const [newCat, setNewCat] = useState('');
+  const [editDeviceName, setEditDeviceName] = useState(deviceId);
+
+  useEffect(() => {
+    if (activeTab === 'pengaturan') {
+      setFormSet(db.set);
+      setEditDeviceName(deviceId);
+    }
+  }, [activeTab, db.set, deviceId]);
+
+  const hasLegacyV2Data = useMemo(() => {
+    const oldS = LS.get('tb_suppliers', []);
+    const oldM = LS.get('tb_menus', []);
+    const oldT = LS.get('tb_titip', []);
+    return (oldS.length > 0 || oldM.length > 0 || oldT.length > 0);
+  }, [activeTab]);
+
+  const migrateFromV2 = () => {
+    if (!confirm('Kirim data lama (v2.1) di browser ini ke Cloud v3.0?')) return;
+    enqueueCommand('MIGRATE_V2', {
+      suppliers: LS.get('tb_suppliers', []),
+      menus: LS.get('tb_menus', []),
+      titip: LS.get('tb_titip', []),
+      ambil: LS.get('tb_ambil', [])
+    });
+    notify('Data v2.1 dimasukkan ke antrean migrasi Cloud');
+  };
+
+  /* ==========================================================================
+   * RENDER KONTEN PER TAB
+   * ========================================================================== */
+  const renderTransaksiTab = () => {
+    const isDateLocked = txDate < minActiveDate;
+    let totalTitipAll = 0, totalLakuAll = 0, countDiambil = 0, countVerifiedLunas = 0, countUnpaid = 0;
+
+    for (const t of activeDayTransactions) {
+      const s = calcTrxSummary(t);
+      totalTitipAll += s.totalTitip;
+      totalLakuAll += s.totalLaku;
+      if (t[3] === 1) {
+        countDiambil++;
+        if (t[4] === 1 || t[4] === 2) countVerifiedLunas++;
+        else countUnpaid++;
+      }
+    }
+
+    const sortedActs = [...activeDayTransactions].sort((a, b) => b[0].localeCompare(a[0]));
+    const filteredActs = sortedActs.filter(t => {
+      if (txFilterStatus === 'titip' && t[3] !== 0) return false;
+      if (txFilterStatus === 'unpaid' && !(t[3] === 1 && t[4] === 0)) return false;
+      if (txFilterStatus === 'verified' && !(t[3] === 1 && t[4] > 0)) return false;
+      if (searchTx.trim()) {
+        const q = searchTx.toLowerCase();
+        const matchSup = getSupplierName(t[2]).toLowerCase().includes(q);
+        const matchId = t[0].toLowerCase().includes(q);
+        const matchMenu = (t[5] || []).some(([mId]) => getMenuName(mId).toLowerCase().includes(q));
+        return matchSup || matchId || matchMenu;
+      }
+      return true;
+    });
+
+    return html`
+      <div class="anim-up">
+        <!-- Kartu Ringkasan Harian -->
+        <div class="card" style=${{ padding: 18, marginBottom: 14, background: dark ? 'var(--card)' : 'linear-gradient(135deg, #10b981 0%, #059669 100%)', color: dark ? 'inherit' : '#fff' }}>
+          <div style=${{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, gap: 8 }}>
+            <div>
+              <h2 style=${{ fontSize: 15, fontWeight: 700, margin: 0 }}>Ringkasan Konsinyasi</h2>
+              <div style=${{ fontSize: 11, opacity: 0.9 }}>
+                ${isDateLocked ? 'Mode Arsip (>3 Hari Terkunci)' : `Aktif Edit: ${minActiveDate} s/d Hari Ini`}
+              </div>
+            </div>
+            <input type="date" class="input-field" style=${{ width: 'auto', padding: '6px 10px', fontSize: 12, background: 'var(--card)', color: 'var(--ink)', border: 'none', borderRadius: 8 }} value=${txDate} onInput=${e => setTxDate(e.target.value || todayStr)} />
+          </div>
+
+          <div style=${{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <div>
+              <div style=${{ fontSize: 11, opacity: 0.9 }}>Terjual / Total Titip</div>
+              <div style=${{ fontSize: 24, fontWeight: 700 }}>${totalLakuAll} <span style=${{ fontSize: 13, fontWeight: 500, opacity: 0.85 }}>/ ${totalTitipAll} pcs</span></div>
+            </div>
+            <div style=${{ display: 'flex', flexDirection: 'column', gap: 4, borderLeft: dark ? '1px solid var(--border)' : '1px solid rgba(255,255,255,0.3)', paddingLeft: 12, fontSize: 12 }}>
+              <div><b>${activeDayTransactions.length}</b> Nota Titipan</div>
+              <div><b>${countVerifiedLunas}</b> Terverifikasi Lunas</div>
+              ${countUnpaid > 0 && html`<div style=${{ color: dark ? 'var(--warn)' : '#fef08a', fontWeight: 700 }}><b>${countUnpaid}</b> Diambil Belum Dibayar</div>`}
+            </div>
+          </div>
+        </div>
+
+        ${isDateLocked && html`
+          <div style=${{ padding: '9px 12px', borderRadius: 8, background: 'rgba(239, 68, 68, 0.1)', border: '1px solid var(--expense)', color: 'var(--expense)', fontSize: 12, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
+            <${I.Lock} style=${{ width: 15, height: 15, flexShrink: 0 }} />
+            <span>Data tanggal ${txDate} berusia lebih dari 3 hari dan otomatis dikunci dari perubahan.</span>
+          </div>
+        `}
+
+        <!-- Tombol Aksi Utama -->
+        <div style=${{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 10 }}>
+          <button class="btn-primary" style=${{ height: 54, flexDirection: 'column', gap: 2 }} disabled=${isDateLocked} onClick=${() => openTitipModal()}>
+            <${I.Inbox} style=${{ width: 18, height: 18 }} /> Buat Titipan Baru
+          </button>
+          <button class="btn-primary" style=${{ height: 54, flexDirection: 'column', gap: 2, background: 'var(--ink)', borderColor: 'var(--ink)' }} onClick=${() => setModal('scan')}>
+            <${I.Scan} style=${{ width: 18, height: 18 }} /> Scan Struk Ambil
+          </button>
+        </div>
+
+        <div style=${{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 16 }}>
+          <button class="btn-ghost" style=${{ height: 44, background: 'var(--card)' }} onClick=${openHarianModal}>
+            <${I.FileText} style=${{ width: 15, height: 15 }} /> Teks Menu (Canva)
+          </button>
+          <button class="btn-ghost" style=${{ height: 44, background: 'var(--card)' }} onClick=${() => { setRekapFrom(txDate); setRekapTo(txDate); setModal('rekap'); }}>
+            <${I.Download} style=${{ width: 15, height: 15 }} /> Rekap PDF & CSV
+          </button>
+        </div>
+
+        <!-- Pencarian & Filter Status -->
+        <div style=${{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 14 }}>
+          <div style=${{ position: 'relative' }}>
+            <${I.Search} style=${{ width: 16, height: 16, position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--muted)' }} />
+            <input type="text" class="input-field" style=${{ paddingLeft: 36, height: 38 }} placeholder="Cari supplier, menu, atau ID nota..." value=${searchTx} onInput=${e => setSearchTx(e.target.value)} />
+          </div>
+          <div style=${{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 2 }}>
+            ${[
+              ['all', `Semua (${activeDayTransactions.length})`],
+              ['titip', `Belum Diambil (${activeDayTransactions.filter(t => t[3] === 0).length})`],
+              ['unpaid', `Belum Dibayar (${countUnpaid})`],
+              ['verified', `Terverifikasi Lunas (${countVerifiedLunas})`]
+            ].map(([val, label]) => html`
+              <button class=${txFilterStatus === val ? 'btn-primary' : 'btn-ghost'} style=${{ padding: '5px 10px', fontSize: 11.5, whiteSpace: 'nowrap' }} onClick=${() => setTxFilterStatus(val)}>
+                ${label}
+              </button>
+            `)}
+          </div>
+        </div>
+
+        <!-- Daftar Transaksi Harian -->
+        ${isLoadingHist ? html`
+          <div style=${{ textAlign: 'center', padding: 24, fontSize: 13, color: 'var(--muted)' }}>Memuat data historis dari Spreadsheet...</div>
+        ` : filteredActs.length === 0 ? html`
+          <div style=${{ fontSize: 13, color: 'var(--muted)', textAlign: 'center', padding: 24 }}>Tidak ada catatan transaksi yang sesuai filter di tanggal ini.</div>
+        ` : html`
+          <div style=${{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            ${filteredActs.map(trx => {
+              const isAmbil = trx[3] === 1;
+              const bayarCode = Number(trx[4]) || 0;
+              const isVerified = isAmbil && (bayarCode === 1 || bayarCode === 2);
+              const locked = trx[1] < minActiveDate;
+              const sum = calcTrxSummary(trx);
+
+              return html`
+                <div class="card" style=${{ padding: 12, display: 'flex', flexDirection: 'column', gap: 10 }} key=${trx[0]}>
+                  <div style=${{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                    <div style=${{ width: 34, height: 34, borderRadius: 8, background: 'var(--paper2)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: isVerified ? 'var(--success)' : 'var(--accent)', flexShrink: 0 }}>
+                      <${I.Inbox} style=${{ width: 17, height: 17 }} />
+                    </div>
+                    <div style=${{ flex: 1, minWidth: 0 }}>
+                      <div style=${{ fontSize: 14, fontWeight: 700, wordBreak: 'break-word' }}>${getSupplierName(trx[2])}</div>
+                      <div style=${{ fontSize: 11, color: 'var(--muted)' }}>
+                        ${trx[0]} • ${(trx[5] || []).length} menu (${sum.totalTitip} pcs)
+                        ${isAmbil ? ` • Laku: ${sum.totalLaku} pcs (Rp ${formatRp(sum.bersih)})` : ''}
+                      </div>
+                    </div>
+                    <div style=${{ display: 'flex', gap: 2, flexShrink: 0 }}>
+                      <button class="btn-ghost" style=${{ padding: 6, border: 'none', color: 'var(--info)' }} title="Lihat Rincian (Tanpa Cetak)" onClick=${() => { setRincianTrxId(trx[0]); setModal('rincian'); }}>
+                        <${I.Eye} style=${{ width: 16, height: 16 }} />
+                      </button>
+                      ${!locked && html`
+                        <button class="btn-ghost" style=${{ padding: 6, border: 'none' }} title="Edit Titipan" onClick=${() => openTitipModal(trx)}>
+                          <${I.Edit} style=${{ width: 16, height: 16 }} />
+                        </button>
+                      `}
+                      <button class="btn-ghost" style=${{ padding: 6, border: 'none', color: 'var(--muted)' }} title="Cetak Struk Titip" onClick=${() => executePrint({ type: 'titip', trx })}>
+                        <${I.Printer} style=${{ width: 16, height: 16 }} />
+                      </button>
+                    </div>
+                  </div>
+
+                  <div style=${{ borderTop: '1px dashed var(--border)', paddingTop: 9, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                    <div style=${{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                      ${!isAmbil ? html`
+                        <span class="badge" style=${{ background: 'rgba(239,68,68,0.12)', color: 'var(--expense)' }}>Belum Diambil</span>
+                      ` : isVerified ? html`
+                        <span class="badge" style=${{ background: 'rgba(16,185,129,0.14)', color: 'var(--success)' }}>
+                          <${I.Check} style=${{ width: 12, height: 12 }} /> Terverifikasi (${bayarLabel(bayarCode)})
+                        </span>
+                      ` : html`
+                        <span class="badge" style=${{ background: 'rgba(245,158,11,0.16)', color: 'var(--warn)' }}>
+                          Diambil • Belum Dibayar
+                        </span>
+                      `}
+                      ${locked && html`<span class="badge" style=${{ background: 'var(--paper2)', color: 'var(--muted)' }}><${I.Lock} style=${{ width: 11, height: 11 }} /> Terkunci</span>`}
+                    </div>
+
+                    <div style=${{ display: 'flex', gap: 6 }}>
+                      <button class="btn-ghost" style=${{ padding: '5px 9px', fontSize: 11.5 }} onClick=${() => { setRincianTrxId(trx[0]); setModal('rincian'); }}>
+                        Rincian
+                      </button>
+                      ${!locked && (!isAmbil ? html`
+                        <button class="btn-primary" style=${{ padding: '5px 11px', fontSize: 11.5, background: 'var(--ink)', borderColor: 'var(--ink)' }} onClick=${() => openAmbilModal(trx)}>
+                          Proses Ambil
+                        </button>
+                      ` : html`
+                        <button class="btn-ghost" style=${{ padding: '5px 9px', fontSize: 11.5 }} onClick=${() => openAmbilModal(trx)}>
+                          Edit Ambil
+                        </button>
+                      `)}
+                      ${isAmbil && html`
+                        <button class="btn-ghost" style=${{ padding: '5px 9px', fontSize: 11.5, color: 'var(--info)' }} onClick=${() => executePrint({ type: 'ambil', trx })}>
+                          Struk Ambil
+                        </button>
+                      `}
+                    </div>
+                  </div>
+                </div>
+              `;
+            })}
+          </div>
+        `}
+      </div>
+    `;
+  };
+
+  const renderMasterTab = () => {
+    // Filter & Paginasi Supplier (5 item / halaman)
+    const filteredSups = db.sup.filter(s => {
+      if (!searchSup.trim()) return true;
+      const q = searchSup.toLowerCase();
+      return s[1].toLowerCase().includes(q) || (s[2] || '').toLowerCase().includes(q) || (s[3] || '').toLowerCase().includes(q);
+    });
+    const supTotalPages = Math.max(1, Math.ceil(filteredSups.length / PAGE_SIZE));
+    const curSupPage = Math.min(supPage, supTotalPages);
+    const pagedSups = filteredSups.slice((curSupPage - 1) * PAGE_SIZE, curSupPage * PAGE_SIZE);
+
+    // Filter & Paginasi Menu (5 item / halaman)
+    const filteredMenus = db.mnu.filter(m => {
+      if (filterMnuSup && m[1] !== filterMnuSup) return false;
+      if (!searchMnu.trim()) return true;
+      const q = searchMnu.toLowerCase();
+      return m[2].toLowerCase().includes(q) || getSupplierName(m[1]).toLowerCase().includes(q) || (m[3] || '').toLowerCase().includes(q);
+    });
+    const mnuTotalPages = Math.max(1, Math.ceil(filteredMenus.length / PAGE_SIZE));
+    const curMnuPage = Math.min(mnuPage, mnuTotalPages);
+    const pagedMenus = filteredMenus.slice((curMnuPage - 1) * PAGE_SIZE, curMnuPage * PAGE_SIZE);
+
+    return html`
+      <div class="anim-up" style=${{ display: 'flex', flexDirection: 'column', gap: 22 }}>
+        <!-- SEKSI SUPPLIER (MAKS 5 PER HALAMAN) -->
+        <div class="card" style=${{ padding: 14 }}>
+          <div style=${{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+            <h3 style=${{ fontSize: 15, fontWeight: 700, margin: 0, display: 'flex', alignItems: 'center', gap: 6 }}>
+              <${I.Users} style=${{ width: 16, height: 16 }} /> Data Supplier (${db.sup.length})
+            </h3>
+            <button class="btn-primary" style=${{ padding: '6px 11px', fontSize: 12 }} onClick=${() => openSupplierModal()}>
+              <${I.Plus} style=${{ width: 14, height: 14 }} /> Tambah
+            </button>
+          </div>
+
+          <div style=${{ position: 'relative', marginBottom: 10 }}>
+            <${I.Search} style=${{ width: 15, height: 15, position: 'absolute', left: 11, top: '50%', transform: 'translateY(-50%)', color: 'var(--muted)' }} />
+            <input type="text" class="input-field" style=${{ paddingLeft: 34, height: 36, fontSize: 13 }} placeholder="Pencarian cepat supplier (nama / HP / bank)..." value=${searchSup} onInput=${e => { setSearchSup(e.target.value); setSupPage(1); }} />
+          </div>
+
+          ${pagedSups.length === 0 ? html`
+            <div style=${{ fontSize: 13, color: 'var(--muted)', padding: '12px 0', textAlign: 'center' }}>Supplier tidak ditemukan.</div>
+          ` : html`
+            <div style=${{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              ${pagedSups.map(s => html`
+                <div key=${s[0]} style=${{ padding: 10, borderRadius: 9, background: 'var(--paper2)', border: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
+                  <div style=${{ flex: 1, minWidth: 0 }}>
+                    <div style=${{ fontSize: 13.5, fontWeight: 700 }}>${s[1]} <span style=${{ fontSize: 11, fontWeight: 500, color: 'var(--muted)' }}>• ${s[6] || 0} menu</span></div>
+                    <div style=${{ fontSize: 11.5, color: 'var(--muted)', marginTop: 2, wordBreak: 'break-word' }}>
+                      HP: ${s[2] || '-'} | Bank: ${s[3] || '-'} ${s[4] || ''}
+                    </div>
+                  </div>
+                  <div style=${{ display: 'flex', gap: 2, flexShrink: 0 }}>
+                    ${s[4] && html`<button class="btn-ghost" style=${{ padding: 5, border: 'none', color: 'var(--info)' }} title="Salin Rekening" onClick=${() => copyToClipboard(s[4]).then(() => notify('Nomor rekening disalin'))}><${I.Copy} style=${{ width: 15, height: 15 }} /></button>`}
+                    ${s[2] && html`<a href="https://wa.me/${formatWA(s[2])}" target="_blank" class="btn-ghost" style=${{ padding: 5, border: 'none', color: 'var(--success)' }} title="Chat WhatsApp"><${I.MessageCircle} style=${{ width: 15, height: 15 }} /></a>`}
+                    <button class="btn-ghost" style=${{ padding: 5, border: 'none' }} title="Edit" onClick=${() => openSupplierModal(s)}><${I.Edit} style=${{ width: 15, height: 15 }} /></button>
+                    <button class="btn-ghost" style=${{ padding: 5, border: 'none', color: 'var(--expense)' }} title="Hapus" onClick=${() => hapusSupplier(s[0])}><${I.Trash} style=${{ width: 15, height: 15 }} /></button>
+                  </div>
+                </div>
+              `)}
+            </div>
+          `}
+
+          <div style=${{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 10, paddingTop: 8, borderTop: '1px solid var(--border)', fontSize: 12, color: 'var(--muted)' }}>
+            <span>Hal ${curSupPage} / ${supTotalPages} (${filteredSups.length} mitra)</span>
+            <div style=${{ display: 'flex', gap: 6 }}>
+              <button class="btn-ghost" style=${{ padding: '4px 8px' }} disabled=${curSupPage <= 1} onClick=${() => setSupPage(p => Math.max(1, p - 1))}><${I.ChevronLeft} style=${{ width: 14, height: 14 }} /></button>
+              <button class="btn-ghost" style=${{ padding: '4px 8px' }} disabled=${curSupPage >= supTotalPages} onClick=${() => setSupPage(p => Math.min(supTotalPages, p + 1))}><${I.ChevronRight} style=${{ width: 14, height: 14 }} /></button>
+            </div>
+          </div>
+        </div>
+
+        <!-- SEKSI MENU (MAKS 5 PER HALAMAN) -->
+        <div class="card" style=${{ padding: 14 }}>
+          <div style=${{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+            <h3 style=${{ fontSize: 15, fontWeight: 700, margin: 0, display: 'flex', alignItems: 'center', gap: 6 }}>
+              <${I.Coffee} style=${{ width: 16, height: 16 }} /> Data Menu (${db.mnu.length})
+            </h3>
+            <button class="btn-primary" style=${{ padding: '6px 11px', fontSize: 12 }} onClick=${() => openMenuModal()}>
+              <${I.Plus} style=${{ width: 14, height: 14 }} /> Tambah
+            </button>
+          </div>
+
+          <div style=${{ display: 'grid', gridTemplateColumns: '1fr 135px', gap: 6, marginBottom: 10 }}>
+            <div style=${{ position: 'relative' }}>
+              <${I.Search} style=${{ width: 15, height: 15, position: 'absolute', left: 11, top: '50%', transform: 'translateY(-50%)', color: 'var(--muted)' }} />
+              <input type="text" class="input-field" style=${{ paddingLeft: 34, height: 36, fontSize: 13 }} placeholder="Cari nama menu..." value=${searchMnu} onInput=${e => { setSearchMnu(e.target.value); setMnuPage(1); }} />
+            </div>
+            <select class="input-field" style=${{ height: 36, fontSize: 12, padding: '4px 8px' }} value=${filterMnuSup} onChange=${e => { setFilterMnuSup(e.target.value); setMnuPage(1); }}>
+              <option value="">Semua Mitra</option>
+              ${db.sup.map(s => html`<option value=${s[0]}>${s[1]}</option>`)}
+            </select>
+          </div>
+
+          ${pagedMenus.length === 0 ? html`
+            <div style=${{ fontSize: 13, color: 'var(--muted)', padding: '12px 0', textAlign: 'center' }}>Menu tidak ditemukan.</div>
+          ` : html`
+            <div style=${{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              ${pagedMenus.map(m => html`
+                <div key=${m[0]} style=${{ padding: 10, borderRadius: 9, background: 'var(--paper2)', border: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
+                  <div style=${{ flex: 1, minWidth: 0 }}>
+                    <div style=${{ fontSize: 13.5, fontWeight: 700, wordBreak: 'break-word' }}>${m[2]}</div>
+                    <div style=${{ fontSize: 11.5, color: 'var(--muted)', marginTop: 2 }}>
+                      ${m[3] || 'Lainnya'} • Mitra: <b>${getSupplierName(m[1])}</b>
+                    </div>
+                  </div>
+                  <div style=${{ display: 'flex', gap: 2, flexShrink: 0 }}>
+                    <button class="btn-ghost" style=${{ padding: 5, border: 'none' }} title="Edit" onClick=${() => openMenuModal(m)}><${I.Edit} style=${{ width: 15, height: 15 }} /></button>
+                    <button class="btn-ghost" style=${{ padding: 5, border: 'none', color: 'var(--expense)' }} title="Hapus" onClick=${() => hapusMenu(m[0])}><${I.Trash} style=${{ width: 15, height: 15 }} /></button>
+                  </div>
+                </div>
+              `)}
+            </div>
+          `}
+
+          <div style=${{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 10, paddingTop: 8, borderTop: '1px solid var(--border)', fontSize: 12, color: 'var(--muted)' }}>
+            <span>Hal ${curMnuPage} / ${mnuTotalPages} (${filteredMenus.length} menu)</span>
+            <div style=${{ display: 'flex', gap: 6 }}>
+              <button class="btn-ghost" style=${{ padding: '4px 8px' }} disabled=${curMnuPage <= 1} onClick=${() => setMnuPage(p => Math.max(1, p - 1))}><${I.ChevronLeft} style=${{ width: 14, height: 14 }} /></button>
+              <button class="btn-ghost" style=${{ padding: '4px 8px' }} disabled=${curMnuPage >= mnuTotalPages} onClick=${() => setMnuPage(p => Math.min(mnuTotalPages, p + 1))}><${I.ChevronRight} style=${{ width: 14, height: 14 }} /></button>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  };
+
+  const renderPengaturanTab = () => {
+    const simpanPengaturanGlobal = (e) => {
+      e.preventDefault();
+      const cleanDev = editDeviceName.trim().toUpperCase() || deviceId;
+      if (cleanDev !== deviceId) {
+        setDeviceId(cleanDev);
+        LS.set(KEYS.DEVICE, cleanDev);
+      }
+      enqueueCommand('SET_SAVE', {
+        hargaJual: Number(formSet.hargaJual) || 0,
+        komisi: Number(formSet.komisi) || 0,
+        bizInfo: formSet.bizInfo,
+        harianBgColor: formSet.harianBgColor,
+        harianTextColor: formSet.harianTextColor,
+        kategoriList: formSet.kategoriList
+      });
+      notify('Pengaturan global disimpan & dikirim ke Cloud');
+    };
+
+    const handleLogoUpload = (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        setLocalLogo(ev.target.result);
+        LS.set(KEYS.LOGO, ev.target.result);
+        notify('Logo lokal diperbarui');
+      };
+      reader.readAsDataURL(file);
+    };
+
+    const addKategori = () => {
+      const nm = newCat.trim();
+      if (!nm) return;
+      if (formSet.kategoriList.includes(nm)) return notify('Kategori sudah ada', 'err');
+      const nextCats = [...formSet.kategoriList, nm];
+      setFormSet(prev => ({ ...prev, kategoriList: nextCats }));
+      enqueueCommand('SET_SAVE', { kategoriList: nextCats });
+      setNewCat('');
+      notify('Kategori ditambahkan & disinkronkan');
+    };
+
+    const hapusKategori = (kat) => {
+      if (db.mnu.some(m => m[3] === kat)) return notify('Kategori masih digunakan pada menu', 'err');
+      const nextCats = formSet.kategoriList.filter(k => k !== kat);
+      setFormSet(prev => ({ ...prev, kategoriList: nextCats }));
+      enqueueCommand('SET_SAVE', { kategoriList: nextCats });
+      notify('Kategori dihapus');
+    };
+
+    return html`
+      <div class="anim-up card" style=${{ padding: 18, display: 'flex', flexDirection: 'column', gap: 20 }}>
+        <form onSubmit=${simpanPengaturanGlobal} style=${{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <div>
+            <h3 style=${{ fontSize: 15, fontWeight: 700, margin: '0 0 10px 0' }}>Harga & Komisi Global (Tersinkron 3 HP)</h3>
+            <div style=${{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+              <div>
+                <label style=${{ fontSize: 12, fontWeight: 600, color: 'var(--muted)', display: 'block', marginBottom: 4 }}>Harga Jual / Pcs (Rp)</label>
+                <input type="number" class="input-field" value=${formSet.hargaJual} onInput=${e => setFormSet({ ...formSet, hargaJual: Number(e.target.value) })} />
+              </div>
+              <div>
+                <label style=${{ fontSize: 12, fontWeight: 600, color: 'var(--muted)', display: 'block', marginBottom: 4 }}>Komisi Lapak / Pcs (Rp)</label>
+                <input type="number" class="input-field" value=${formSet.komisi} onInput=${e => setFormSet({ ...formSet, komisi: Number(e.target.value) })} />
+              </div>
+            </div>
+          </div>
+
+          <div style=${{ borderTop: '1px solid var(--border)', paddingTop: 14 }}>
+            <h3 style=${{ fontSize: 15, fontWeight: 700, margin: '0 0 10px 0' }}>Identitas Usaha (Kop Struk & Laporan)</h3>
+            <div style=${{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <input type="text" class="input-field" placeholder="Nama Usaha" value=${formSet.bizInfo.nama} onInput=${e => setFormSet({ ...formSet, bizInfo: { ...formSet.bizInfo, nama: e.target.value } })} />
+              <textarea class="input-field" rows="2" placeholder="Alamat Usaha" value=${formSet.bizInfo.alamat} onInput=${e => setFormSet({ ...formSet, bizInfo: { ...formSet.bizInfo, alamat: e.target.value } })} />
+              <div style=${{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                <input type="text" class="input-field" placeholder="No. Telp / WA" value=${formSet.bizInfo.telp} onInput=${e => setFormSet({ ...formSet, bizInfo: { ...formSet.bizInfo, telp: e.target.value } })} />
+                <input type="text" class="input-field" placeholder="Sosmed (IG/FB)" value=${formSet.bizInfo.sosmed} onInput=${e => setFormSet({ ...formSet, bizInfo: { ...formSet.bizInfo, sosmed: e.target.value } })} />
+              </div>
+              <div>
+                <label style=${{ fontSize: 12, fontWeight: 600, color: 'var(--muted)', display: 'block', marginBottom: 4 }}>Logo Usaha (Disimpan Lokal di Perangkat Ini)</label>
+                <div style=${{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                  ${localLogo && html`<img src=${localLogo} style=${{ height: 38, width: 38, objectFit: 'contain', borderRadius: 4, border: '1px solid var(--border)' }} />`}
+                  <input type="file" accept="image/*" class="input-field" onChange=${handleLogoUpload} style=${{ flex: 1 }} />
+                  ${localLogo && html`<button type="button" class="btn-ghost" style=${{ color: 'var(--expense)', padding: 6 }} onClick=${() => { setLocalLogo(''); LS.set(KEYS.LOGO, ''); }}><${I.Trash} style=${{ width: 15, height: 15 }} /></button>`}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div style=${{ borderTop: '1px solid var(--border)', paddingTop: 14 }}>
+            <label style=${{ fontSize: 12, fontWeight: 600, color: 'var(--muted)', display: 'block', marginBottom: 4 }}>Kode Identitas Perangkat HP Ini</label>
+            <input type="text" class="input-field" placeholder="Contoh: HP-KASIR / HP-1" value=${editDeviceName} onInput=${e => setEditDeviceName(e.target.value)} />
+          </div>
+
+          <button type="submit" class="btn-primary" style=${{ width: '100%' }}>Simpan Pengaturan Global</button>
+        </form>
+
+        <!-- Kategori Menu -->
+        <div style=${{ borderTop: '1px solid var(--border)', paddingTop: 16 }}>
+          <h3 style=${{ fontSize: 15, fontWeight: 700, margin: '0 0 10px 0' }}>Kategori Menu (Urutan Teks Canva)</h3>
+          <div style=${{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 10 }}>
+            ${formSet.kategoriList.map(kat => html`
+              <div key=${kat} style=${{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 0', borderBottom: '1px solid var(--border)' }}>
+                <span style=${{ fontSize: 13, fontWeight: 600 }}>${kat}</span>
+                <button class="btn-ghost" style=${{ padding: 4, border: 'none', color: 'var(--expense)' }} onClick=${() => hapusKategori(kat)}><${I.Trash} style=${{ width: 15, height: 15 }} /></button>
+              </div>
+            `)}
+          </div>
+          <div style=${{ display: 'flex', gap: 8 }}>
+            <input type="text" class="input-field" placeholder="Nama kategori baru..." value=${newCat} onInput=${e => setNewCat(e.target.value)} />
+            <button type="button" class="btn-primary" onClick=${addKategori}>Tambah</button>
+          </div>
+        </div>
+
+        <!-- Koneksi Cloud 7-Sheet -->
+        <div style=${{ borderTop: '1px solid var(--border)', paddingTop: 16 }}>
+          <div style=${{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+            <h3 style=${{ fontSize: 15, fontWeight: 700, margin: 0, display: 'flex', alignItems: 'center', gap: 6 }}>
+              <${I.Cloud} style=${{ width: 17, height: 17 }} /> Koneksi Cloud (7-Sheet v3.0)
+            </h3>
+            <span style=${{ fontSize: 11, color: 'var(--muted)' }}>Versi DB: <b>v${db.v}</b></span>
+          </div>
+
+          ${outbox.length > 0 && html`
+            <div style=${{ fontSize: 12, color: 'var(--warn)', fontWeight: 600, marginBottom: 8 }}>
+              ${outbox.length} perintah lokal menunggu dikirim ke Cloud.
+            </div>
+          `}
+
+          <input
+            type="url"
+            class="input-field"
+            placeholder="Tempel URL Web App Google Apps Script (https://script.google.com/macros/s/...)"
+            value=${syncUrl}
+            onInput=${e => { setSyncUrl(e.target.value); LS.set(KEYS.SYNC_URL, e.target.value); }}
+            style=${{ marginBottom: 10 }}
+          />
+          <div style=${{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <button type="button" class="btn-primary" onClick=${() => syncWithServer({ manual: true })}>Sync Sekarang</button>
+            <button type="button" class="btn-ghost" onClick=${() => {
+              const resetC = { ...serverCache, v: 0 };
+              cacheRef.current = resetC;
+              setServerCache(resetC);
+              LS.set(KEYS.CACHE, resetC);
+              syncWithServer({ manual: true });
+            }}>Tarik Ulang Snapshot Server</button>
+            ${hasLegacyV2Data && html`
+              <button type="button" class="btn-ghost" style=${{ color: 'var(--info)' }} onClick=${migrateFromV2}>Migrasi Data v2.1</button>
+            `}
+          </div>
+        </div>
+      </div>
+    `;
+  };
+
+  /* ==========================================================================
+   * BADGE STATUS SINKRONISASI HEADER
+   * ========================================================================== */
+  const renderSyncBadge = () => {
+    if (!syncUrl) {
+      return html`<span class="badge" style=${{ background: 'var(--expense)', color: '#fff', fontSize: 10 }}>Offline / Lokal</span>`;
+    }
+    if (syncState === 'syncing') {
+      return html`<span class="badge" style=${{ background: 'var(--info)', color: '#fff', fontSize: 10 }}>Syncing...</span>`;
+    }
+    if (syncState === 'err') {
+      return html`<button onClick=${() => syncWithServer({ manual: true })} class="badge" style=${{ background: 'var(--expense)', color: '#fff', fontSize: 10, border: 'none', cursor: 'pointer' }}>Gagal • Coba Lagi</button>`;
+    }
+    return html`<button onClick=${() => syncWithServer({ manual: true })} class="badge" style=${{ background: 'var(--success)', color: '#fff', fontSize: 10, border: 'none', cursor: 'pointer' }} title="Klik untuk sinkronisasi manual">Cloud v${db.v}${outbox.length > 0 ? ` (${outbox.length})` : ''}</button>`;
+  };
+
+  /* ==========================================================================
+   * DATA MODAL RINCIAN & AMBIL & TITIP
+   * ========================================================================== */
+  const activeRincianTrx = useMemo(() => {
+    if (!rincianTrxId) return null;
+    return db.trx.find(t => t[0] === rincianTrxId) || activeDayTransactions.find(t => t[0] === rincianTrxId) || null;
+  }, [rincianTrxId, db.trx, activeDayTransactions]);
+
+  const activeAmbilTrx = useMemo(() => {
+    if (!ambilTrxId) return null;
+    return db.trx.find(t => t[0] === ambilTrxId) || null;
+  }, [ambilTrxId, db.trx]);
+
+  const filteredTitipSuppliers = useMemo(() => {
+    const q = titipSupSearch.toLowerCase().trim();
+    if (!q) return db.sup;
+    return db.sup.filter(s => s[1].toLowerCase().includes(q) || (s[2] || '').includes(q));
+  }, [db.sup, titipSupSearch]);
+
+  const menusForSelectedTitipSup = useMemo(() => {
+    if (!titipSup) return [];
+    return db.mnu.filter(m => m[1] === titipSup);
+  }, [db.mnu, titipSup]);
+
+  const filteredHarianMenus = useMemo(() => {
+    const q = harianSearch.toLowerCase().trim();
+    if (!q) return db.mnu;
+    return db.mnu.filter(m => m[2].toLowerCase().includes(q) || getSupplierName(m[1]).toLowerCase().includes(q) || (m[3] || '').toLowerCase().includes(q));
+  }, [db.mnu, harianSearch, getSupplierName]);
+
+  return html`
+    <div>
+      <div class="no-print" style=${{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+        <header style=${{ background: 'var(--card)', borderBottom: '1px solid var(--border)', position: 'sticky', top: 0, zIndex: 30, padding: '10px 16px' }}>
+          <div style=${{ maxWidth: 620, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+            <div style=${{ display: 'flex', alignItems: 'center', gap: 7, flexWrap: 'wrap' }}>
+              <div style=${{ background: 'var(--accent)', color: '#fff', width: 28, height: 28, borderRadius: 7, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }}>T</div>
+              <span style=${{ fontSize: 17, fontWeight: 700, letterSpacing: '-0.4px' }}>TitipBekal</span>
+              ${renderSyncBadge()}
+            </div>
+            <div style=${{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span style=${{ fontSize: 11, color: 'var(--muted)', fontFamily: 'DM Mono, monospace' }}>${deviceId}</span>
+              <button onClick=${() => setDark(!dark)} class="btn-ghost" style=${{ padding: 7, border: 'none' }}>
+                ${dark ? html`<${I.Sun} style=${{ width: 17, height: 17 }} />` : html`<${I.Moon} style=${{ width: 17, height: 17 }} />`}
+              </button>
+            </div>
+          </div>
+        </header>
+
+        <main style=${{ flex: 1, maxWidth: 620, margin: '0 auto', width: '100%', padding: '16px' }}>
+          <div class="tab-bar" style=${{ marginBottom: 16 }}>
+            <button class=${`tab-btn ${activeTab === 'transaksi' ? 'active' : ''}`} onClick=${() => setActiveTab('transaksi')}>Transaksi</button>
+            <button class=${`tab-btn ${activeTab === 'penjualan' ? 'active' : ''}`} onClick=${() => setActiveTab('penjualan')}>Penjualan</button>
+            <button class=${`tab-btn ${activeTab === 'master' ? 'active' : ''}`} onClick=${() => setActiveTab('master')}>Master Data</button>
+            <button class=${`tab-btn ${activeTab === 'pengaturan' ? 'active' : ''}`} onClick=${() => setActiveTab('pengaturan')}><${I.Settings} style=${{ width: 16, height: 16 }} /></button>
+          </div>
+
+          ${activeTab === 'transaksi' && renderTransaksiTab()}
+          ${activeTab === 'penjualan' && html`<${KasirLokal} menus=${db.mnu} defaultHarga=${db.set.hargaJual} notify=${notify} executePrint=${executePrint} />`}
+          ${activeTab === 'master' && renderMasterTab()}
+          ${activeTab === 'pengaturan' && renderPengaturanTab()}
+        </main>
+
+        <!-- ================================================================
+             MODAL 1: SUPPLIER (TAMBAH / EDIT)
+             ================================================================ -->
+        ${modal === 'supplier' && html`
+          <div class="modal-overlay" onClick=${e => e.target === e.currentTarget && setModal(null)}>
+            <div class="modal-box anim-up">
+              <div style=${{ padding: '14px 18px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <h3 style=${{ fontSize: 16, fontWeight: 700, margin: 0 }}>${supplierMap.has(supForm.id) ? 'Edit Supplier' : 'Tambah Supplier'}</h3>
+                <button class="btn-ghost" style=${{ padding: 4, border: 'none' }} onClick=${() => setModal(null)}><${I.X} style=${{ width: 19, height: 19 }} /></button>
+              </div>
+              <form onSubmit=${saveSupplier} style=${{ padding: 18, display: 'flex', flexDirection: 'column', gap: 11 }}>
+                <input type="text" class="input-field" placeholder="Nama Supplier *" required value=${supForm.nama} onInput=${e => setSupForm(f => ({ ...f, nama: e.target.value }))} />
+                <input type="text" class="input-field" placeholder="No. HP / WhatsApp (08... / 628...)" value=${supForm.hp} onInput=${e => setSupForm(f => ({ ...f, hp: e.target.value }))} />
+                <div style=${{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: 10 }}>
+                  <input type="text" class="input-field" placeholder="Bank / E-Wallet" value=${supForm.bank} onInput=${e => setSupForm(f => ({ ...f, bank: e.target.value }))} />
+                  <input type="text" class="input-field" placeholder="Nomor Rekening" value=${supForm.rekening} onInput=${e => setSupForm(f => ({ ...f, rekening: e.target.value }))} />
+                </div>
+                <textarea class="input-field" rows="2" placeholder="Alamat (opsional)" value=${supForm.alamat} onInput=${e => setSupForm(f => ({ ...f, alamat: e.target.value }))} />
+                <button type="submit" class="btn-primary" style=${{ marginTop: 4 }}>Simpan Supplier</button>
+              </form>
+            </div>
+          </div>
+        `}
+
+        <!-- ================================================================
+             MODAL 2: MENU (TAMBAH / EDIT + DETEKSI IDENTIK / MIRIP)
+             ================================================================ -->
+        ${modal === 'menu' && html`
+          <div class="modal-overlay" onClick=${e => e.target === e.currentTarget && setModal(null)}>
+            <div class="modal-box anim-up">
+              <div style=${{ padding: '14px 18px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <h3 style=${{ fontSize: 16, fontWeight: 700, margin: 0 }}>${menuMap.has(menuForm.id) ? 'Edit Menu' : 'Tambah Menu'}</h3>
+                <button class="btn-ghost" style=${{ padding: 4, border: 'none' }} onClick=${() => setModal(null)}><${I.X} style=${{ width: 19, height: 19 }} /></button>
+              </div>
+              <form onSubmit=${saveMenu} style=${{ padding: 18, display: 'flex', flexDirection: 'column', gap: 11 }}>
+                <select class="input-field" required value=${menuForm.supplierId} onChange=${e => setMenuForm(f => ({ ...f, supplierId: e.target.value }))}>
+                  <option value="" disabled>Pilih Supplier...</option>
+                  ${db.sup.map(s => html`<option value=${s[0]}>${s[1]}</option>`)}
+                </select>
+                <input type="text" class="input-field" placeholder="Nama Menu *" required value=${menuForm.nama} onInput=${e => setMenuForm(f => ({ ...f, nama: e.target.value }))} />
+
+                ${similarMenus.length > 0 && html`
+                  <div style=${{ padding: 11, borderRadius: 8, background: 'rgba(245, 158, 11, 0.12)', border: '1px solid var(--accent)', display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    <div style=${{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 700, color: 'var(--warn)' }}>
+                      <${I.Alert} style=${{ width: 15, height: 15, flexShrink: 0 }} />
+                      <span>Peringatan Menu Identik / Serupa:</span>
+                    </div>
+                    ${similarMenus.slice(0, 3).map(item => html`
+                      <div key=${item.menu[0]} style=${{ fontSize: 12, paddingLeft: 21 }}>
+                        <div>
+                          <b>${item.menu[2]}</b> — ${item.sameSup
+                            ? html`<span style=${{ color: 'var(--expense)', fontWeight: 700 }}>Mitra sama (${item.exact ? 'Identik 100%' : Math.round(item.score * 100) + '% mirip'})</span>`
+                            : html`<span style=${{ color: 'var(--info)', fontWeight: 600 }}>Mitra: ${getSupplierName(item.menu[1])}</span>`}
+                        </div>
+                        ${!item.sameSup && menuForm.supplierId && html`
+                          <button type="button" class="btn-ghost" style=${{ padding: '2px 8px', fontSize: 11, marginTop: 3 }} onClick=${() => setMenuForm(f => ({ ...f, nama: `${f.nama.trim()} (${getSupplierName(f.supplierId)})` }))}>
+                            Tambah pembeda: "${menuForm.nama.trim()} (${getSupplierName(menuForm.supplierId)})"
+                          </button>
+                        `}
+                      </div>
+                    `)}
+                  </div>
+                `}
+
+                <select class="input-field" required value=${menuForm.kategori} onChange=${e => setMenuForm(f => ({ ...f, kategori: e.target.value }))}>
+                  <option value="" disabled>Pilih Kategori...</option>
+                  ${db.set.kategoriList.map(k => html`<option value=${k}>${k}</option>`)}
+                </select>
+                <button type="submit" class="btn-primary" style=${{ marginTop: 4 }}>Simpan Menu</button>
+              </form>
+            </div>
+          </div>
+        `}
+
+        <!-- ================================================================
+             MODAL 3: BUAT / EDIT TITIPAN (PENCARIAN CEPAT SUPPLIER + MENU WRAP)
+             ================================================================ -->
+        ${modal === 'titip' && html`
+          <div class="modal-overlay" onClick=${e => e.target === e.currentTarget && setModal(null)}>
+            <div class="modal-box anim-up">
+              <div style=${{ padding: '14px 18px', background: 'var(--accent)', color: '#fff', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <h3 style=${{ fontSize: 16, fontWeight: 700, margin: 0 }}>${editingTitipId ? 'Edit Titipan' : 'Catat Titipan Baru'}</h3>
+                <button class="btn-ghost" style=${{ padding: 4, border: 'none', color: '#fff' }} onClick=${() => setModal(null)}><${I.X} style=${{ width: 19, height: 19 }} /></button>
+              </div>
+              <div style=${{ padding: 18, display: 'flex', flexDirection: 'column', gap: 14 }}>
+                ${!editingTitipId ? html`
+                  <div>
+                    <div style=${{ fontSize: 12, fontWeight: 700, color: 'var(--muted)', marginBottom: 6 }}>1. Cari & Pilih Supplier (${db.sup.length} mitra)</div>
+                    <input type="text" class="input-field" style=${{ marginBottom: 8 }} placeholder="Ketik nama supplier..." value=${titipSupSearch} onInput=${e => setTitipSupSearch(e.target.value)} />
+                    <div style=${{ display: 'flex', gap: 6, flexWrap: 'wrap', maxHeight: 115, overflowY: 'auto', padding: 2 }}>
+                      ${filteredTitipSuppliers.slice(0, 15).map(s => html`
+                        <button
+                          type="button"
+                          key=${s[0]}
+                          class=${titipSup === s[0] ? 'btn-primary' : 'btn-ghost'}
+                          style=${{ padding: '5px 10px', fontSize: 12 }}
+                          onClick=${() => { setTitipSup(s[0]); setTitipItems({}); }}
+                        >
+                          ${s[1]}
+                        </button>
+                      `)}
+                    </div>
+                  </div>
+                ` : html`
+                  <div style=${{ padding: 10, borderRadius: 8, background: 'var(--paper2)', fontSize: 13 }}>
+                    Supplier: <b>${getSupplierName(titipSup)}</b>
+                  </div>
+                `}
+
+                ${titipSup && html`
+                  <div style=${{ background: 'var(--paper2)', padding: 12, borderRadius: 10, border: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: 10, maxHeight: '42vh', overflowY: 'auto' }}>
+                    <div style=${{ fontSize: 12, fontWeight: 700, color: 'var(--muted)' }}>
+                      2. Masukkan Qty Menu (${menusForSelectedTitipSup.length} menu tersedia)
+                    </div>
+                    ${menusForSelectedTitipSup.length === 0 ? html`
+                      <div style=${{ fontSize: 12.5, color: 'var(--expense)' }}>Supplier ini belum memiliki daftar menu di Master Data.</div>
+                    ` : menusForSelectedTitipSup.map(m => html`
+                      <div key=${m[0]} style=${{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, borderBottom: '1px solid var(--border)', paddingBottom: 8 }}>
+                        <div style=${{ flex: 1, minWidth: 0 }}>
+                          <div style=${{ fontSize: 13.5, fontWeight: 600, wordBreak: 'break-word', lineHeight: 1.35 }}>${m[2]}</div>
+                          <div style=${{ fontSize: 11, color: 'var(--muted)' }}>${m[3]}</div>
+                        </div>
+                        <input
+                          type="number"
+                          class="input-field"
+                          style=${{ width: 76, padding: '6px 8px', textAlign: 'center', flexShrink: 0 }}
+                          placeholder="0"
+                          min="0"
+                          value=${titipItems[m[0]] || ''}
+                          onInput=${e => setTitipItems({ ...titipItems, [m[0]]: e.target.value })}
+                        />
+                      </div>
+                    `)}
+                  </div>
+
+                  <div style=${{ display: 'grid', gridTemplateColumns: '1fr 1.4fr', gap: 8 }}>
+                    <button type="button" class="btn-ghost" onClick=${() => saveTitip(false)}>Simpan Saja</button>
+                    <button type="button" class="btn-primary" onClick=${() => saveTitip(true)}>
+                      <${I.Printer} style=${{ width: 15, height: 15 }} /> Simpan & Cetak QR
+                    </button>
+                  </div>
+                `}
+              </div>
+            </div>
+          </div>
+        `}
+
+        <!-- ================================================================
+             MODAL 4: PROSES AMBIL & KONFIRMASI PEMBAYARAN SUPPLIER
+             ================================================================ -->
+        ${modal === 'ambil' && activeAmbilTrx && (() => {
+          const items = activeAmbilTrx[5] || [];
+          const hj = Number(activeAmbilTrx[6]) || db.set.hargaJual;
+          const km = Number(activeAmbilTrx[7]) || db.set.komisi;
+          let previewLaku = 0;
+          items.forEach(([mId, qty]) => {
+            const s = Number(ambilSisa[mId]) || 0;
+            previewLaku += Math.max(0, qty - s);
+          });
+          const previewBersih = Math.max(0, previewLaku * (hj - km));
+
+          return html`
+            <div class="modal-overlay" onClick=${e => e.target === e.currentTarget && setModal(null)}>
+              <div class="modal-box anim-up">
+                <div style=${{ padding: '14px 18px', background: 'var(--ink)', color: '#fff', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <h3 style=${{ fontSize: 16, fontWeight: 700, margin: 0 }}>Proses Ambil & Pembayaran</h3>
+                  <button class="btn-ghost" style=${{ padding: 4, border: 'none', color: '#fff' }} onClick=${() => setModal(null)}><${I.X} style=${{ width: 19, height: 19 }} /></button>
+                </div>
+                <div style=${{ padding: 18, display: 'flex', flexDirection: 'column', gap: 14 }}>
+                  <div style=${{ padding: 10, background: 'var(--paper2)', borderRadius: 8, fontSize: 13 }}>
+                    <div><b>Supplier:</b> ${getSupplierName(activeAmbilTrx[2])}</div>
+                    <div style=${{ fontSize: 11, color: 'var(--muted)' }}>Nota: ${activeAmbilTrx[0]} • Tanggal: ${activeAmbilTrx[1]}</div>
+                  </div>
+
+                  <div style=${{ background: 'var(--paper2)', padding: 11, borderRadius: 10, border: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: 10, maxHeight: '36vh', overflowY: 'auto' }}>
+                    ${items.map(([mId, qty]) => {
+                      const sisaVal = Number(ambilSisa[mId]) || 0;
+                      const lakuVal = Math.max(0, qty - sisaVal);
+                      return html`
+                        <div key=${mId} style=${{ display: 'flex', flexDirection: 'column', gap: 6, borderBottom: '1px solid var(--border)', paddingBottom: 8 }}>
+                          <div style=${{ fontSize: 13, fontWeight: 600, wordBreak: 'break-word', lineHeight: 1.35 }}>${getMenuName(mId)}</div>
+                          <div style=${{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, fontSize: 12 }}>
+                            <span>Titip: <b>${qty}</b></span>
+                            <div style=${{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                              <span>Sisa:</span>
+                              <input
+                                type="number"
+                                class="input-field"
+                                style=${{ width: 64, padding: '4px 6px', textAlign: 'center', height: 30 }}
+                                min="0"
+                                max=${qty}
+                                value=${ambilSisa[mId] ?? 0}
+                                onInput=${e => setAmbilSisa({ ...ambilSisa, [mId]: e.target.value })}
+                              />
+                            </div>
+                            <span style=${{ color: 'var(--success)', fontWeight: 700 }}>Laku: ${lakuVal}</span>
+                          </div>
+                        </div>
+                      `;
+                    })}
+                  </div>
+
+                  <!-- Konfirmasi Pembayaran ke Supplier -->
+                  <div style=${{ padding: 12, borderRadius: 10, border: '1px solid var(--border)', background: 'var(--paper2)' }}>
+                    <div style=${{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                      <span style=${{ fontSize: 12, fontWeight: 700 }}>Status Pembayaran ke Mitra:</span>
+                      <span style=${{ fontSize: 14, fontWeight: 700, color: 'var(--success)' }}>Rp ${formatRp(previewBersih)}</span>
+                    </div>
+                    <div style=${{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6 }}>
+                      ${[
+                        [0, 'Belum Dibayar'],
+                        [1, 'Lunas Tunai'],
+                        [2, 'Lunas Transfer']
+                      ].map(([code, label]) => html`
+                        <button
+                          type="button"
+                          class=${Number(ambilBayarCode) === code ? 'btn-primary' : 'btn-ghost'}
+                          style=${{ padding: '7px 6px', fontSize: 11.5, background: Number(ambilBayarCode) === code ? (code === 0 ? 'var(--warn)' : 'var(--success)') : 'var(--card)', borderColor: Number(ambilBayarCode) === code ? 'transparent' : 'var(--border)' }}
+                          onClick=${() => setAmbilBayarCode(code)}
+                        >
+                          ${label}
+                        </button>
+                      `)}
+                    </div>
+                  </div>
+
+                  <div style=${{ display: 'grid', gridTemplateColumns: '1fr 1.3fr', gap: 8 }}>
+                    <button type="button" class="btn-ghost" onClick=${() => saveAmbil(false)}>Simpan Saja</button>
+                    <button type="button" class="btn-primary" style=${{ background: 'var(--ink)', borderColor: 'var(--ink)' }} onClick=${() => saveAmbil(true)}>
+                      <${I.Printer} style=${{ width: 15, height: 15 }} /> Simpan & Cetak Struk
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          `;
+        })()}
+
+        <!-- ================================================================
+             MODAL 5: LIHAT RINCIAN PENJUALAN TANPA CETAK + VERIFIKASI BAYAR
+             ================================================================ -->
+        ${modal === 'rincian' && activeRincianTrx && (() => {
+          const trx = activeRincianTrx;
+          const supObj = getSupplier(trx[2]);
+          const sum = calcTrxSummary(trx);
+          const isAmbil = trx[3] === 1;
+          const bayarCode = Number(trx[4]) || 0;
+          const locked = trx[1] < minActiveDate;
+
+          const waText = [
+            `Halo ${supObj ? supObj[1] : getSupplierName(trx[2])}, berikut rekap TitipBekal (${trx[1]}):`,
+            ...(trx[5] || []).map(([mId, qty, sisa]) => `- ${getMenuName(mId)}: Titip ${qty}, Sisa ${sisa}, Laku ${Math.max(0, qty - sisa)}`),
+            `Total Laku: ${sum.totalLaku} pcs`,
+            `Hak Bersih: Rp ${formatRp(sum.bersih)}`,
+            `Status: ${bayarLabel(bayarCode)}`
+          ].join('\n');
+
+          return html`
+            <div class="modal-overlay" onClick=${e => e.target === e.currentTarget && setModal(null)}>
+              <div class="modal-box anim-up">
+                <div style=${{ padding: '14px 18px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div>
+                    <h3 style=${{ fontSize: 16, fontWeight: 700, margin: 0 }}>Rincian Transaksi</h3>
+                    <div style=${{ fontSize: 11, color: 'var(--muted)' }}>${trx[0]} • ${trx[1]}</div>
+                  </div>
+                  <button class="btn-ghost" style=${{ padding: 4, border: 'none' }} onClick=${() => setModal(null)}><${I.X} style=${{ width: 19, height: 19 }} /></button>
+                </div>
+
+                <div style=${{ padding: 18, display: 'flex', flexDirection: 'column', gap: 14 }}>
+                  <div style=${{ padding: 12, borderRadius: 10, background: 'var(--paper2)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
+                    <div>
+                      <div style=${{ fontSize: 14, fontWeight: 700 }}>${supObj ? supObj[1] : getSupplierName(trx[2])}</div>
+                      <div style=${{ fontSize: 12, color: 'var(--muted)' }}>
+                        ${supObj && (supObj[3] || supObj[4]) ? `${supObj[3]} • ${supObj[4]}` : 'Rekening belum diatur'}
+                      </div>
+                    </div>
+                    <div style=${{ display: 'flex', gap: 6 }}>
+                      ${supObj && supObj[4] && html`
+                        <button class="btn-ghost" style=${{ padding: '6px 9px', fontSize: 11.5 }} onClick=${() => copyToClipboard(supObj[4]).then(() => notify('Nomor rekening disalin'))}>
+                          <${I.Copy} style=${{ width: 14, height: 14 }} /> Rek
+                        </button>
+                      `}
+                      ${supObj && supObj[2] && html`
+                        <a href=${`https://wa.me/${formatWA(supObj[2])}?text=${encodeURIComponent(waText)}`} target="_blank" class="btn-ghost" style=${{ padding: '6px 9px', fontSize: 11.5, color: 'var(--success)' }}>
+                          <${I.MessageCircle} style=${{ width: 14, height: 14 }} /> Kirim WA
+                        </a>
+                      `}
+                    </div>
+                  </div>
+
+                  <!-- Rincian Item -->
+                  <div style=${{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: '30vh', overflowY: 'auto' }}>
+                    ${(trx[5] || []).map(([mId, qty, sisa]) => {
+                      const laku = Math.max(0, qty - sisa);
+                      return html`
+                        <div key=${mId} style=${{ padding: 9, borderRadius: 8, border: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
+                          <div style=${{ flex: 1, minWidth: 0, fontSize: 13, fontWeight: 600, wordBreak: 'break-word' }}>${getMenuName(mId)}</div>
+                          <div style=${{ fontSize: 12, textAlign: 'right', flexShrink: 0 }}>
+                            <div>Ttp: <b>${qty}</b> | Sisa: <b>${sisa}</b></div>
+                            <div style=${{ color: 'var(--success)', fontWeight: 700 }}>Laku: ${laku} pcs</div>
+                          </div>
+                        </div>
+                      `;
+                    })}
+                  </div>
+
+                  <!-- Ringkasan Rupiah -->
+                  <div style=${{ padding: 12, borderRadius: 10, background: 'var(--paper2)', fontSize: 13, display: 'flex', flexDirection: 'column', gap: 5 }}>
+                    <div style=${{ display: 'flex', justifyContent: 'space-between' }}><span>Total Laku (@Rp ${formatRp(sum.hargaJual)}):</span><b>${sum.totalLaku} pcs</b></div>
+                    <div style=${{ display: 'flex', justifyContent: 'space-between' }}><span>Penjualan Bruto:</span><span>Rp ${formatRp(sum.bruto)}</span></div>
+                    <div style=${{ display: 'flex', justifyContent: 'space-between' }}><span>Komisi Lapak (@Rp ${formatRp(sum.komisi)}):</span><span>-Rp ${formatRp(sum.potKomisi)}</span></div>
+                    <div style=${{ borderTop: '1px dashed var(--border)', paddingTop: 6, display: 'flex', justifyContent: 'space-between', fontSize: 15, fontWeight: 700, color: 'var(--success)' }}>
+                      <span>Hak Bersih Supplier:</span>
+                      <span>Rp ${formatRp(sum.bersih)}</span>
+                    </div>
+                  </div>
+
+                  <!-- Verifikasi Pembayaran Langsung dari Rincian -->
+                  ${isAmbil && !locked && html`
+                    <div>
+                      <div style=${{ fontSize: 12, fontWeight: 700, marginBottom: 6 }}>Verifikasi Status Pembayaran Supplier:</div>
+                      <div style=${{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6 }}>
+                        ${[[0, 'Belum Dibayar'], [1, 'Lunas Tunai'], [2, 'Lunas Transfer']].map(([c, lbl]) => html`
+                          <button
+                            type="button"
+                            class=${bayarCode === c ? 'btn-primary' : 'btn-ghost'}
+                            style=${{ padding: '7px 6px', fontSize: 11.5, background: bayarCode === c ? (c === 0 ? 'var(--warn)' : 'var(--success)') : 'transparent', borderColor: bayarCode === c ? 'transparent' : 'var(--border)' }}
+                            onClick=${() => updatePaymentStatusOnly(trx, c)}
+                          >
+                            ${lbl}
+                          </button>
+                        `)}
+                      </div>
+                    </div>
+                  `}
+
+                  <div style=${{ display: 'flex', justifyContent: 'space-between', gap: 8, marginTop: 4 }}>
+                    ${!locked ? html`
+                      <button type="button" class="btn-ghost" style=${{ color: 'var(--expense)' }} onClick=${() => hapusTransaksi(trx)}>
+                        <${I.Trash} style=${{ width: 15, height: 15 }} /> Hapus Nota
+                      </button>
+                    ` : html`<div></div>`}
+                    <div style=${{ display: 'flex', gap: 8 }}>
+                      <button type="button" class="btn-ghost" onClick=${() => executePrint({ type: isAmbil ? 'ambil' : 'titip', trx })}>
+                        <${I.Printer} style=${{ width: 15, height: 15 }} /> Cetak Struk
+                      </button>
+                      <button type="button" class="btn-primary" onClick=${() => setModal(null)}>Tutup</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          `;
+        })()}
+
+        <!-- ================================================================
+             MODAL 6: GENERATOR DAFTAR MENU HARIAN -> TEKS RAPI PER KATEGORI (CANVA)
+             ================================================================ -->
+        ${modal === 'harian' && html`
+          <div class="modal-overlay" onClick=${e => e.target === e.currentTarget && setModal(null)}>
+            <div class="modal-box anim-up">
+              <div style=${{ padding: '14px 18px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <h3 style=${{ fontSize: 16, fontWeight: 700, margin: 0 }}>Teks Daftar Menu Harian (Siap Canva)</h3>
+                  <div style=${{ fontSize: 11, color: 'var(--muted)' }}>Terurut rapi per kategori untuk ditempel ke desain Canva</div>
+                </div>
+                <button class="btn-ghost" style=${{ padding: 4, border: 'none' }} onClick=${() => setModal(null)}><${I.X} style=${{ width: 19, height: 19 }} /></button>
+              </div>
+
+              <div style=${{ padding: 18, display: 'flex', flexDirection: 'column', gap: 12 }}>
+                <div style=${{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                  <input type="date" class="input-field" style=${{ width: 'auto' }} value=${harianDate} onInput=${e => setHarianDate(e.target.value || todayStr)} />
+                  <button type="button" class="btn-primary" style=${{ flex: 1, fontSize: 12 }} onClick=${() => autoSelectFromDate(harianDate)}>
+                    Ambil dari Titipan Tanggal Ini
+                  </button>
+                </div>
+
+                <div style=${{ display: 'flex', gap: 6 }}>
+                  <input type="text" class="input-field" style=${{ height: 34, fontSize: 12.5 }} placeholder="Cari & centang menu..." value=${harianSearch} onInput=${e => setHarianSearch(e.target.value)} />
+                  <button type="button" class="btn-ghost" style=${{ padding: '4px 9px', fontSize: 11.5, whiteSpace: 'nowrap' }} onClick=${() => {
+                    const next = {};
+                    db.mnu.forEach(m => { next[m[0]] = true; });
+                    setHarianSelected(next);
+                  }}>Semua</button>
+                  <button type="button" class="btn-ghost" style=${{ padding: '4px 9px', fontSize: 11.5 }} onClick=${() => setHarianSelected({})}>Reset</button>
+                </div>
+
+                <div style=${{ background: 'var(--paper2)', padding: 10, borderRadius: 8, border: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: 6, maxHeight: '24vh', overflowY: 'auto' }}>
+                  ${filteredHarianMenus.map(m => html`
+                    <label key=${m[0]} style=${{ display: 'flex', alignItems: 'flex-start', gap: 8, cursor: 'pointer', fontSize: 13 }}>
+                      <input type="checkbox" style=${{ width: 16, height: 16, marginTop: 2, accentColor: 'var(--accent)', flexShrink: 0 }} checked=${!!harianSelected[m[0]]} onChange=${e => setHarianSelected({ ...harianSelected, [m[0]]: e.target.checked })} />
+                      <span style=${{ flex: 1, wordBreak: 'break-word' }}><b>${m[2]}</b> <span style=${{ fontSize: 11, color: 'var(--muted)' }}>• ${m[3]}</span></span>
+                    </label>
+                  `)}
+                </div>
+
+                <!-- Opsi Format Teks Canva -->
+                <div style=${{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, flexWrap: 'wrap', fontSize: 12 }}>
+                  <label style=${{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
+                    <input type="checkbox" checked=${harianIncludeHeader} onChange=${e => setHarianIncludeHeader(e.target.checked)} />
+                    <span>Sertakan Judul & Tanggal</span>
+                  </label>
+                  <div style=${{ display: 'flex', gap: 4 }}>
+                    ${[['• ', '• Bullet'], ['- ', '- Strip'], ['', 'Polos']].map(([sym, lbl]) => html`
+                      <button type="button" class=${harianBullet === sym ? 'btn-primary' : 'btn-ghost'} style=${{ padding: '3px 8px', fontSize: 11 }} onClick=${() => setHarianBullet(sym)}>${lbl}</button>
+                    `)}
+                  </div>
+                </div>
+
+                <textarea
+                  class="input-field"
+                  rows="8"
+                  style=${{ fontFamily: 'DM Sans, sans-serif', fontSize: 13, lineHeight: 1.45 }}
+                  placeholder="Pilih menu di atas untuk menghasilkan daftar teks terurut per kategori..."
+                  value=${canvaMenuText}
+                />
+
+                <button
+                  type="button"
+                  class="btn-primary"
+                  disabled=${!canvaMenuText}
+                  onClick=${() => copyToClipboard(canvaMenuText).then(() => notify('Daftar menu disalin! Siap ditempel ke Canva'))}
+                >
+                  <${I.Copy} style=${{ width: 16, height: 16 }} /> Salin Teks Menu (${Object.values(harianSelected).filter(Boolean).length} menu)
+                </button>
+              </div>
+            </div>
+          </div>
+        `}
+
+        <!-- ================================================================
+             MODAL 7: REKAP PENJUALAN PDF & CSV (PER HARI / RENTANG / GLOBAL / SUP / MENU)
+             ================================================================ -->
+        ${modal === 'rekap' && html`
+          <div class="modal-overlay" onClick=${e => e.target === e.currentTarget && setModal(null)}>
+            <div class="modal-box anim-up" style=${{ maxWidth: 580 }}>
+              <div style=${{ padding: '14px 18px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <h3 style=${{ fontSize: 16, fontWeight: 700, margin: 0 }}>Rekap Penjualan (PDF & CSV)</h3>
+                <button class="btn-ghost" style=${{ padding: 4, border: 'none' }} onClick=${() => setModal(null)}><${I.X} style=${{ width: 19, height: 19 }} /></button>
+              </div>
+
+              <div style=${{ padding: 18, display: 'flex', flexDirection: 'column', gap: 12 }}>
+                <div class="tab-bar">
+                  <button class=${'tab-btn ' + (rekapPeriodType === 'single' ? 'active' : '')} onClick=${() => setRekapPeriodType('single')}>Per Hari (1 Tanggal)</button>
+                  <button class=${'tab-btn ' + (rekapPeriodType === 'range' ? 'active' : '')} onClick=${() => setRekapPeriodType('range')}>Rentang Tanggal</button>
+                </div>
+
+                <div style=${{ display: 'grid', gridTemplateColumns: rekapPeriodType === 'range' ? '1fr 1fr' : '1fr', gap: 8 }}>
+                  <div>
+                    <label style=${{ fontSize: 11, fontWeight: 600, color: 'var(--muted)' }}>${rekapPeriodType === 'range' ? 'Dari Tanggal' : 'Pilih Tanggal'}</label>
+                    <input type="date" class="input-field" value=${rekapFrom} onInput=${e => setRekapFrom(e.target.value || todayStr)} />
+                  </div>
+                  ${rekapPeriodType === 'range' && html`
+                    <div>
+                      <label style=${{ fontSize: 11, fontWeight: 600, color: 'var(--muted)' }}>Sampai Tanggal</label>
+                      <input type="date" class="input-field" value=${rekapTo} onInput=${e => setRekapTo(e.target.value || rekapFrom)} />
+                    </div>
+                  `}
+                </div>
+
+                <div style=${{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6 }}>
+                  ${[
+                    ['global', 'Global (Nota)'],
+                    ['supplier', 'Per Supplier'],
+                    ['menu', 'Per Menu']
+                  ].map(([mKey, mLbl]) => html`
+                    <button type="button" class=${rekapGroupMode === mKey ? 'btn-primary' : 'btn-ghost'} style=${{ padding: '7px 8px', fontSize: 12 }} onClick=${() => setRekapGroupMode(mKey)}>
+                      ${mLbl}
+                    </button>
+                  `)}
+                </div>
+
+                <label style=${{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, cursor: 'pointer' }}>
+                  <input type="checkbox" checked=${rekapOnlyAmbil} onChange=${e => setRekapOnlyAmbil(e.target.checked)} />
+                  <span>Hanya hitung nota yang sudah diproses ambil</span>
+                </label>
+
+                <!-- Ringkasan & Preview Tabel -->
+                <div style=${{ padding: 10, borderRadius: 10, background: 'var(--paper2)', border: '1px solid var(--border)' }}>
+                  ${isLoadingHist ? html`
+                    <div style=${{ fontSize: 12.5, textAlign: 'center', padding: 16, color: 'var(--muted)' }}>Menarik data historis dari Cloud...</div>
+                  ` : html`
+                    <div style=${{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6, textAlign: 'center', marginBottom: 8 }}>
+                      <div style=${{ background: 'var(--card)', padding: 6, borderRadius: 6 }}>
+                        <div style=${{ fontSize: 10, color: 'var(--muted)' }}>Terjual</div>
+                        <div style=${{ fontSize: 13, fontWeight: 700 }}>${rekapComputed.totals.laku} / ${rekapComputed.totals.titip}</div>
+                      </div>
+                      <div style=${{ background: 'var(--card)', padding: 6, borderRadius: 6 }}>
+                        <div style=${{ fontSize: 10, color: 'var(--muted)' }}>Komisi Lapak</div>
+                        <div style=${{ fontSize: 13, fontWeight: 700, color: 'var(--info)' }}>Rp ${formatRp(rekapComputed.totals.komisi)}</div>
+                      </div>
+                      <div style=${{ background: 'var(--card)', padding: 6, borderRadius: 6 }}>
+                        <div style=${{ fontSize: 10, color: 'var(--muted)' }}>Hak Mitra</div>
+                        <div style=${{ fontSize: 13, fontWeight: 700, color: 'var(--success)' }}>Rp ${formatRp(rekapComputed.totals.bersih)}</div>
+                      </div>
+                    </div>
+
+                    <div style=${{ maxHeight: '26vh', overflowY: 'auto', fontSize: 12 }}>
+                      ${rekapComputed.rows.length === 0 ? html`
+                        <div style=${{ textAlign: 'center', color: 'var(--muted)', padding: 12 }}>Tidak ada data transaksi pada periode ini.</div>
+                      ` : rekapComputed.rows.map((r, i) => html`
+                        <div key=${i} style=${{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 4px', borderBottom: '1px solid var(--border)', gap: 8 }}>
+                          <div style=${{ flex: 1, minWidth: 0 }}>
+                            <div style=${{ fontWeight: 600, wordBreak: 'break-word' }}>
+                              ${rekapGroupMode === 'menu' ? r.menu : r.supplier}
+                            </div>
+                            <div style=${{ fontSize: 11, color: 'var(--muted)' }}>
+                              ${rekapGroupMode === 'global' ? `${r.tanggal} • ${r.statusText}` : rekapGroupMode === 'supplier' ? `${r.nota} nota • Ttp ${r.titip}` : `${r.supplier} • Ttp ${r.titip}`}
+                            </div>
+                          </div>
+                          <div style=${{ textAlign: 'right', flexShrink: 0 }}>
+                            <div style=${{ fontWeight: 700 }}>Laku: ${r.laku}</div>
+                            <div style=${{ fontSize: 11, color: 'var(--success)' }}>Rp ${formatRp(r.bersih)}</div>
+                          </div>
+                        </div>
+                      `)}
+                    </div>
+                  `}
+                </div>
+
+                <div style=${{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                  <button type="button" class="btn-ghost" onClick=${exportRekapCSV}>
+                    <${I.Download} style=${{ width: 16, height: 16 }} /> Export CSV
+                  </button>
+                  <button type="button" class="btn-primary" onClick=${printRekapPDF}>
+                    <${I.Printer} style=${{ width: 16, height: 16 }} /> Cetak / Simpan PDF
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        `}
+
+        <!-- ================================================================
+             MODAL 8: SCANNER QR CODE STRUK
+             ================================================================ -->
+        ${modal === 'scan' && html`
+          <div class="modal-overlay" onClick=${e => e.target === e.currentTarget && setModal(null)}>
+            <div class="modal-box anim-up">
+              <div style=${{ padding: '14px 18px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <h3 style=${{ fontSize: 16, fontWeight: 700, margin: 0 }}>Scan QR Code Struk Titip</h3>
+                <button class="btn-ghost" style=${{ padding: 4, border: 'none' }} onClick=${() => setModal(null)}><${I.X} style=${{ width: 19, height: 19 }} /></button>
+              </div>
+              <div style=${{ padding: 18 }}>
+                <p style=${{ fontSize: 12.5, color: 'var(--muted)', margin: '0 0 10px 0', textAlign: 'center' }}>
+                  Arahkan kamera ke QR Code pada struk penitipan untuk memproses pengambilan & pembayaran.
+                </p>
+                <div id="qr-reader" style=${{ width: '100%', minHeight: 240, background: '#000', borderRadius: 8 }}></div>
+              </div>
+            </div>
+          </div>
+        `}
+
+        ${toast && html`<${Toast} msg=${toast.msg} type=${toast.type} />`}
+      </div>
+
+      <!-- AREA KHUSUS CETAK (THERMAL 57mm & A4 PDF) -->
+      <div class="print-only">
+        <${PrintOverlay}
+          printData=${printData}
+          bizInfo=${db.set.bizInfo}
+          logoUrl=${localLogo}
+          getSupplierName=${getSupplierName}
+          getMenuName=${getMenuName}
+        />
+      </div>
+    </div>
+  `;
+}
+
+render(html`<${App} />`, document.getElementById('app-root'));
+</script>
+</body>
+</html>
